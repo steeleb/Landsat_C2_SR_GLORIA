@@ -5,3 +5,9 @@
 
 ## pesky .DS_Store
 **.DS_Store
+
+## py env
+env/
+
+## _targets folder
+_targets/

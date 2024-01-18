@@ -5,21 +5,21 @@
 # indicated. All inputs are case-sensitive.
 
 local_settings:
-- data_dir: "" # point to the *full* directory path where your location information is stored - this path must end with a '/'
-- location_file: "" # name of the *.csv* file that contains the location information
-- unique_id: "" # this is the column that stores the unique identifier for each site, should not contain any special characters
-- latitude: "" # this is the column that stores the latitude of the site, must be in decimal degrees
-- longitude: "" # this is the column that stores the longitude of the site, must be in decimal degrees
-- location_crs: "" # this is the coordinate reference system of the location data, must be in EPSG format (e.g. EPSG:4326)
-- polygon: "" # optional. True or False - if True, you have lake polygon shapefiles for each site.
+- data_dir: "/Users/steeleb/Documents/GitHub/Landsat_C2_SR_GLORIA/data/" # point to the *full* directory path where your location information is stored - this path must end with a '/'
+- location_file: "collated_locations_for_pull.csv" # name of the *.csv* file that contains the location information
+- unique_id: "rowid" # this is the column that stores the unique identifier for each site, should not contain any special characters
+- latitude: "Latitude" # this is the column that stores the latitude of the site, must be in decimal degrees
+- longitude: "Longitude" # this is the column that stores the longitude of the site, must be in decimal degrees
+- location_crs: "EPSG:4326" # this is the coordinate reference system of the location data, must be in EPSG format (e.g. EPSG:4326)
+- polygon: "False" # optional. True or False - if True, you have lake polygon shapefiles for each site.
 - poly_crs: "" # this is the coordinate reference system of the polygon data, must be in EPSG format (e.g. EPSG:4326)
 - poly_dir: "" # optional. point to the directory where your lake polygon shapefiles are stored - this path must end with a '/'
 - poly_file: "" # optional. name of the shapefile that contains the lake polygons. 
 
 google_settings:
-- proj: "" # this is a short name for file naming conventions. All output files will include this prefix.
-- proj_folder: "" # this is the folder name where the GEE data will be save to Google Drive. If it doesn't exist, it will be created.
-- ee_proj: "" # this is the ee project name you are running your pulls from
+- proj: "SR_GLORIA" # this is a short name for file naming conventions. All output files will include this prefix.
+- proj_folder: "SR_GLORIA" # this is the folder name where the GEE data will be save to Google Drive. If it doesn't exist, it will be created.
+- ee_proj: "ee-ls-c2-srst" # this is the ee project name you are running your pulls from
 
 # The following parameters are optional and have default values listed below. 
 # If these key-values remain unaltered, date will be acquired for the entire satellite data record at the specified location only.
@@ -30,7 +30,7 @@ temporal_settings:
 
 spatial_settings: 
 - extent: "site" # options: "site", "polygon", "polycenter", "site+poly", "site+polygon+polycenter", "polygon+polycenter" - at this time lake and lake center can only be calculated for lakes in the US
-- site_buffer: 120 # buffer distance in meters around the site or poly center
+- site_buffer: 150 # width of square buffer - in this case, 5x30 for a 5x5 square
 
 gee_settings:
 - cloud_filter: "True" # True or False - if True, scenes will be filtered by scene-level cloudy value provided in the metadata

@@ -2,7 +2,7 @@ library(targets)
 library(tarchetypes)
 library(reticulate)
 
-yaml_file <- "northern-poudre-historical-config.yml"
+yaml_file <- "gloria_config.yml"
 
 # MUST READ ---------------------------------------------------------------
 
@@ -70,7 +70,7 @@ list(
   tar_target(
     name = locs_save,
     command = grab_locs(yml),
-    packages = "readr"
+    packages = "tidyverse"
   ),
   
   # read and track formatted locations shapefile
@@ -81,55 +81,17 @@ list(
     packages = "readr"
   ),
   
-  # use location shapefile and configurations to get polygons from NHDPlusv2
-  tar_target(
-    name = poly_save,
-    command = get_NHD(locs, yml),
-    packages = c("nhdplusTools", "sf", "tidyverse")
-  ),
-  
-  # load and track polygons file
-  tar_file_read(
-    name = polygons, # this will throw an error if the configure extent does not include polygon
-    command = tar_read(poly_save),
-    read = read_sf(!!.x),
-    packages = "sf",
-    error = "null"
-  ),
-  
-  # use `polygons` sfc to calculate Chebyshev centers
-  tar_target(
-    name = centers_save,
-    command = calc_center(polygons, yml),
-    packages = c("sf", "polylabelr", "tidyverse")
-  ),
-  
-  # track centers file
-  tar_file_read(
-    name = centers, # this will throw an error if the configure extent does not include center.
-    command = tar_read(centers_save),
-    read = read_sf(!!.x),
-    packages = "sf",
-    error = "null"
-  ),
-  
-  # get WRS tile acquisition method from yaml
+  # set WRS tile acquisition method
   tar_target(
     name = WRS_detection_method,
-    command = {
-      locs
-      centers
-      polygons
-      get_WRS_detection(yml)
-    },
-    packages = "readr"
+    command = "site"
   ),
   
   # get WRS tiles
   tar_target(
     name = WRS_tiles,
-    command = get_WRS_tiles(WRS_detection_method, yml, locs, centers, polygons),
-    packages = c("readr", "sf")
+    command = get_WRS_tiles(WRS_detection_method, yml, locs),
+    packages = c("tidyverse", "sf")
   ),
   
   # run the Landsat pull as function per tile
@@ -138,11 +100,9 @@ list(
     command = {
       yml
       locs
-      polygons
-      centers
       csv_to_eeFeat
       apply_scale_factors
-      dp_buff
+      dp_buff #this function has been altered from the upstream dp_buff
       DSWE
       Mbsrv
       Ndvi
@@ -157,9 +117,9 @@ list(
       calc_hill_shades
       remove_geo
       maximum_no_of_tasks
-      ref_pull_457_DSWE1
+      ref_pull_57_DSWE1
       ref_pull_89_DSWE1
-      ref_pull_457_DSWE3
+      ref_pull_57_DSWE3
       ref_pull_89_DSWE3
       run_GEE_per_tile(WRS_tiles)
     },
