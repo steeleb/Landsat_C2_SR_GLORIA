@@ -8,7 +8,7 @@ This repository is covered by the MIT use license. We request that all downstrea
 
 The code presented in this repository is an adaptation of the code in the [ROSSyndicate repository Landsat_C2_SRST](https://github.com/rossyndicate/Landsat_C2_SRST). This code was written by members of the ROSSyndicate at Colorado State University and other contributors. The alterations from the original workflow are as follows:
 
-1.  only targets that pull buffered location data were retained (i.e. no center points or whole waterbodies)
+1.  only targets that pull buffered location data are utilized (i.e. no center points or whole waterbodies are pulled)
 
 2.  the buffer method has been altered from a circular buffer to a square buffer to match the methods in Maciel, et al 2023.
 
