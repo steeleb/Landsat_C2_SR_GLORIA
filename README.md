@@ -14,7 +14,7 @@ The code presented in this repository is an adaptation of the code in the [ROSSy
 
 3.  all thermal data and related columns have been removed for the purposes of this analysis.
 
-Not all location information to replicate the Maciel, et al. analysis using more stringent filters and correction coefficients. However, the locations of all GLORIA data are listed in the 'data' folder within the file "GLORIA_meta_and_lab.csv" and the filtered dataset from Maciel, et al is present in the "Matchups.csv".
+Not all location information to replicate the Maciel, et al. analysis using more stringent filters and correction coefficients were available. However, the locations of all GLORIA data are listed in the 'data' folder within the file "GLORIA_meta_and_lab.csv" and the filtered dataset from Maciel, et al is present in the "Matchups.csv". The filtered dataset likely represents a fraction of the sites from the upstream pre-filtered datset.
 
 ## Data Origin
 
