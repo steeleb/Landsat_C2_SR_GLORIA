@@ -15,3 +15,7 @@ _targets/
 ## data_acquisition/out folder, except WRS_subset_list.csv
 data_acquisition/out/*
 !data_acquisition/out/WRS_subset_list.csv
+
+## data_acquisition/in folder - just the temp files created by the script
+data_acquisition/in/locs.csv
+data_acquisition/in/yml.csv
