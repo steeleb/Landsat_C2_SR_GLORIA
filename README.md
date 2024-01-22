@@ -10,7 +10,9 @@ The code presented in this repository is an adaptation of the code in the [ROSSy
 
 1.  only targets that pull buffered location data are utilized (i.e. no center points or whole waterbodies are pulled)
 
-2.  the buffer method has been altered from a circular buffer to a square buffer to match the methods in Maciel, et al 2023.
+2.  the buffer method has been altered from a circular buffer to a square buffer to match the methods in Maciel, et al 2023
+
+3.  remove Landsat 4 from the pull
 
 Not all location information to replicate the Maciel, et al. analysis using more stringent filters and correction coefficients were available. However, the locations of all GLORIA data are listed in the 'data' folder within the file "GLORIA_meta_and_lab.csv" and the filtered dataset from Maciel, et al is present in the "Matchups.csv". The filtered dataset likely represents a fraction of the sites from the upstream pre-filtered datset.
 
