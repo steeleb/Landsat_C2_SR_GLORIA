@@ -39,6 +39,9 @@ b_data_acquisition <- list(
     command = {
       # make sure that {targets} runs the config_file target before this target
       config_file 
+      # and that the locs file has been created
+      # save_collated_locs # except that this is making the pipeline become outdated
+      # so just run this as was before
       format_yaml(yaml_file)
     },
     packages = c("yaml", "tidyverse") #for some reason, you have to load TV.
