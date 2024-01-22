@@ -11,3 +11,7 @@ env/
 
 ## _targets folder
 _targets/
+
+## data_acquisition/out folder, except WRS_subset_list.csv
+data_acquisition/out/*
+!data_acquisition/out/WRS_subset_list.csv
