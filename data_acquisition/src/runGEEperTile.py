@@ -11,7 +11,7 @@ yml = read_csv('data_acquisition/in/yml.csv')
 
 eeproj = yml['ee_proj'][0]
 #initialize GEE
-ee.Initialize(project = 'eeproj')
+ee.Initialize(project = eeproj)
 
 # get current tile
 with open('data_acquisition/out/current_tile.txt', 'r') as file:
