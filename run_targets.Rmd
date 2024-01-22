@@ -47,9 +47,10 @@ You will need to have [installed and initialized the `gcloud CLI`](https://cloud
 
 ### Set up your Python environment
 
-```{r}
+```{r eval = F}
+library(reticulate)
 if (!dir.exists("env")) {
-  tar_source("data_acquisition/src/pySetup.R")
+  source("data_acquisition/src/pySetup.R")
 } else {
   use_condaenv(file.path(getwd(), "env"))
 }
@@ -59,7 +60,7 @@ if (!dir.exists("env")) {
 
 To authenticate your GEE account, you must execute the following command and follow the prompts in your browser:
 
-```{python}
+```{python eval = F}
 ee.Authenticate()
 ```
 
