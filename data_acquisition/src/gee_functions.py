@@ -35,16 +35,17 @@ def apply_scale_factors(image):
   return image.addBands(opticalBands, None, True).addBands(thermalBands, None,True)
 
 
-def dp_buff(image):
-  """ Buffer ee.FeatureCollection sites from csv_to_eeFeat by user-specified radius
+def dp_buff(feature):
+  """ Buffer ee.FeatureCollection sites from csv_to_eeFeat by user-specified diameter,
+  and then grabbing the bounds for that circle to create a square extent
 
   Args:
-      image: ee.Image of an ee.ImageCollection
+      feature: ee.Feature of an ee.FeatureCollection
 
   Returns:
       ee.FeatureCollection of polygons resulting from buffered points
   """
-  return image.buffer(ee.Number.parse(str(buffer)))
+  return feature.buffer(ee.Number.parse(str(buffer)).divide(2)).bounds()
 
 
 def add_rad_mask(image):
@@ -324,7 +325,7 @@ def remove_geo(image):
 
 
 ## Set up the reflectance pull
-def ref_pull_457_DSWE1(image):
+def ref_pull_57_DSWE1(image):
   """ This function applies all functions to the Landsat 4-7 ee.ImageCollection, extracting
   summary statistics for each geometry area where the DSWE value is 1 (high confidence water)
 
@@ -403,7 +404,7 @@ def ref_pull_457_DSWE1(image):
   out = lsout.map(remove_geo)
   return out
 
-def ref_pull_457_DSWE3(image):
+def ref_pull_57_DSWE3(image):
   """ This function applies all functions to the Landsat 4-7 ee.ImageCollection, extracting
   summary statistics for each geometry area where the DSWE value is 3 (high confidence
   vegetated pixel)

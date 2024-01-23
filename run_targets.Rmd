@@ -1,6 +1,6 @@
 ---
-title: "Run Targets - Landsat Collection 2 SR/ST Acquisition"
-subtitle: "Northern Water and Cache La Poudre Branch"
+title: "Run Targets - Landsat Collection 2 SR Acquisition"
+subtitle: "GLORIA and Maciel data pull"
 date: "`r Sys.Date()`"
 author: "ROSSyndicate"
 output:
@@ -10,9 +10,9 @@ output:
 
 # Purpose
 
-This script loads all necessary packages to run the targets pipeline, then runs it! This particular instance pulls the historical Landsat record for Northern Water and all reservoirs greater than 0.01km\^2 in the Cache La Poudre HUC 8 watershed. The locations file referenced in the yaml config file was generated in targets branch "a" of the [NW-CLP-RS repository](https://github.com/rossyndicate/NW-CLP-RS).
+This script loads all necessary packages to run the targets pipeline, then runs it! This particular instance pulls the historical Landsat record for the collated locations from the GLORIA dataset and the matched Maciel, et al dataset.
 
-Running this pipeline requires access to both the successfully run a branch of the NW-CLP-RS repository and access to the ROSSyndicate Google Account. If attempting to reproduce this pipeline, you may need to alter the filepath for the NW-CLP-RS in the yml file. At a future point, when this workflow is stable, this pipeline will be integrated into the NW-CLP-RS pipeline to reduce the interdependence between the two repositories.
+Running this pipeline requires access to the ROSSyndicate Google Account as written, but can easily be updated to a different Google Account and eeProject by altering the config file ('gloria_config.yml').
 
 ## Install necessary packages
 
@@ -36,24 +36,35 @@ packages <- c('tidyverse',
               'tarchetypes',
               'yaml',
               'readr',
-              'nhdplusTools',
-              'polylabelr',
               'sf')
 
-lapply(packages, package_installer)
+invisible(lapply(packages, package_installer))
 ```
 
 ## Authenticate and initialize Earth Engine
 
 You will need to have [installed and initialized the `gcloud CLI`](https://cloud.google.com/sdk/docs/install) and have a [Google Earth Engine account](https://code.earthengine.google.com/register) prior to running this workflow. Some common troubleshooting solutions [can be found here]<https://github.com/rossyndicate/ROSS_RS_mini_tools/blob/main/helps/CommonIssues.md>).
 
+### Set up your Python environment
+
+```{r eval = F}
+library(reticulate)
+if (!dir.exists("env")) {
+  source("data_acquisition/src/pySetup.R")
+} else {
+  use_condaenv(file.path(getwd(), "env"))
+}
+```
+
 ### Authentication
 
-To authenticate your GEE account, you must execute the following command in your **zsh** terminal and follow the prompts in your browser:
+To authenticate your GEE account, you must execute the following command and follow the prompts in your browser:
 
-`earthengine authenticate`
+```{python eval = F}
+ee.Authenticate()
+```
 
-When complete, your terminal will read:
+When complete, your your terminal will read:
 
 `Successfully saved authorization token.`
 
@@ -65,7 +76,7 @@ Initialization through the Python command `ee.Initialize()` is automatically com
 
 ## Run the targets pipeline and output a network graph.
 
-Prior to running this pipeline, you'll need to populate the `config.yml` file with the information for the Landsat Surface Reflectance and Surface Temperature Collection 2 product stack pull. Additionally, you will need to change line 5 of the `_targets.R` file if you have renamed the config file from `config.yml`.
+The `gloria_config.yml` file has been populated with the information for the Landsat Surface Reflectance Collection 2 product stack pull.
 
 ```{r run_targets, echo = F}
 library(targets)
@@ -78,20 +89,6 @@ Only errors that prematurely end the pipeline need to be addressed. Check the ne
 
 ### Create a network diagram of the workflow.
 
-```{r create_target_vis, echo=F, message=FALSE}
-# save the mmd file
-writeLines(tar_mermaid(), sep = '\n', 'mermaid/mermaid.mmd')
+```{r}
+tar_visnetwork()
 ```
-
-```{r write_mermaid, echo = F, message = F}
-# save the mmd file
-writeLines(tar_mermaid(), sep = '\n', 'mermaid/mermaid.mmd')
-```
-
-```{zsh create_mermaid_png}
-mmdc -i mermaid/mermaid.mmd -o mermaid/mermaid.png -t dark -w 4000 -H 1000
-```
-
-![](mermaid/mermaid.png)
-
-In order to view [legible] text, right click the image and open in a new window. The `centers` icon will be marked red as errored - this is because the config file is not set to calculate centers for this pipeline.
