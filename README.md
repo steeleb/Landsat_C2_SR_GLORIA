@@ -6,7 +6,7 @@ This repository is covered by the MIT use license. We request that all downstrea
 
 ## Code Architecture
 
-This repository and analysis uses the {targets} package to create intelligent workflows. Because the GEE pull was run before adding additional {targets} groups, the functions are run in the file `b_data_acquisition.R`, but the source/in/out folders are in a folder that does not contain an indication of the targets group ('b' in this case). Changing the folder name from `data_acquisition` would invalidate that portion of the {targets} workflow, requiring a re-pull of the GEE data to become up to date.
+This repository and analysis uses the {targets} package to create intelligent workflows. Because the GEE pull was run before adding additional {targets} groups, the functions are run in the file `b_data_acquisition.R`, but the 'src', 'in', and 'out' folders are in a folder that does not contain an indication of the targets group (i.e., 'data acquisition', without 'b' in this case). Changing the folder name from `data_acquisition` would invalidate that portion of the {targets} workflow, requiring a re-pull of the GEE data to become up to date.
 
 The full pipeline is orchestrated using the \`run_targets.Rmd\` script. This also outlines the required software and packages/modules needed to run the pipeline.
 
