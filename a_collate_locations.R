@@ -40,10 +40,19 @@ a_collate_locations <- list(
   tar_target(
     name = gloria_formatted,
     command = gloria_metadata %>% 
-      select(GLORIA_ID, Latitude, Longitude) %>% 
-      distinct()
+      select(GLORIA_ID, Latitude, Longitude, Water_body_type) %>% 
+      distinct() %>% 
+      # filter to inland sites (drop coastal ocean and other)
+      # Water_body_type	Water body type (multiple choice list)
+      # 1	Lake
+      # 2	Estuary
+      # 3	Coastal ocean
+      # 4	River
+      # 5	Other
+      filter(Water_body_type %in% c(1,2,4))
   ),
-  #format maciel data
+  
+  #format Maciel data
   tar_target(
     name = maciel_formatted,
     command = maciel_matches %>% 
@@ -56,6 +65,7 @@ a_collate_locations <- list(
                                  NA_character_),
              maciel = 1)
   ),
+  
   #join those suckers, harmonize and drop locs without lat/lon
   tar_target(
     name = collated_locs,
@@ -67,11 +77,11 @@ a_collate_locations <- list(
       rowid_to_column() %>% 
       filter(!is.na(Latitude|Longitude))
   ),
+  
   # save the file
   tar_target(
     name = save_collated_locs,
     command = write_csv(collated_locs, "data/collated_locations_for_pull.csv"),
-    packages = "readr"
   )
 )
   
