@@ -49,41 +49,6 @@ if 'site' in extent:
   locations = read_csv('data_acquisition/in/locs.csv')
   # convert locations to an eeFeatureCollection
   locs_feature = csv_to_eeFeat(locations, yml['location_crs'][0])
-
-
-if 'poly' in extent:
-  #if polygon is in extent, check for shapefile
-  shapefile = yml['polygon'][0]
-  # if shapefile provided by user 
-  if shapefile == True:
-    # load the shapefile into a Fiona object
-    with fiona.open('data_acquisition/out/user_polygon.shp') as src:
-      shapes = ([ee.Geometry.Polygon(
-        [[x[0], x[1]] for x in feature['geometry']['coordinates'][0]]
-        ) for feature in src])
-  else: #otherwise use the NHDPlus file
-    # load the shapefile into a Fiona object
-    with fiona.open('data_acquisition/out/NHDPlus_polygon.shp') as src:
-      shapes = ([ee.Geometry.Polygon(
-        [[x[0], x[1]] for x in feature['geometry']['coordinates'][0]]
-        ) for feature in src])
-  # Create an ee.Feature for each shape
-  features = [ee.Feature(shape, {}) for shape in shapes]
-  # Create an ee.FeatureCollection from the ee.Features
-  poly_feat = ee.FeatureCollection(features)
-
-
-if 'center' in extent:
-  if yml['polygon'][0] == True:
-    centers_csv = read_csv('data_acquisition/out/user_polygon_centers.csv')
-    # load the shapefile into a Fiona object
-    centers = csv_to_eeFeat(centers_csv, yml['poly_crs'][0])
-  else: #otherwise use the NHDPlus file
-    centers_csv = read_csv('data_acquisition/out/NHDPlus_polygon_centers.csv')
-    centers = csv_to_eeFeat(centers_csv, 'EPSG:4326')
-  # Create an ee.FeatureCollection from the ee.Features
-  ee_centers = ee.FeatureCollection(centers)    
-
   
 
 ##############################################
@@ -101,22 +66,19 @@ l7 = (ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')
 l5 = (ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')
     .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
     .filterDate(yml_start, yml_end))
-l4 = (ee.ImageCollection('LANDSAT/LT04/C02/T1_L2')
-    .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
-    .filterDate(yml_start, yml_end))
-    
+
 # merge collections by image processing groups
-ls457 = (ee.ImageCollection(l4.merge(l5).merge(l7))
+ls57 = (ee.ImageCollection(l5.merge(l7))
     .filterBounds(wrs))  
     
 # existing band names
-bn457 = (['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 
+bn57 = (['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 
   'QA_PIXEL', 'SR_CLOUD_QA', 'QA_RADSAT', 'ST_B6', 
   'ST_QA', 'ST_CDIST', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
   'ST_EMSD', 'ST_TRAD', 'ST_URAD'])
   
 # new band names
-bns457 = (['Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
+bns57 = (['Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
   'pixel_qa', 'cloud_qa', 'radsat_qa', 'SurfaceTemp', 
   'temp_qa', 'ST_CDIST', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
   'ST_EMSD', 'ST_TRAD', 'ST_URAD'])
@@ -148,10 +110,10 @@ bns89 = (['Aerosol','Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2',
  
 
 ##########################################
-##---- LANDSAT 457 ACQUISITION      ----##
+##---- LANDSAT 57 ACQUISITION      ----##
 ##########################################
 
-## run the pull for LS457, looping through all extents from yml
+## run the pull for LS57, looping through all extents from yml
 for e in extent:
   
   geo = wrs.geometry()
@@ -172,9 +134,9 @@ for e in extent:
           .map(dp_buff))
       else: print('Extent not identified. Check configuration file.')
   
-  ## process 457 stack
+  ## process 57 stack
   #snip the ls data by the geometry of the location points    
-  locs_stack_ls457 = (ls457
+  locs_stack_ls57 = (ls57
     .filterBounds(feat.geometry()) 
     # apply fill mask and scaling factors
     .map(apply_fill_mask)
@@ -183,18 +145,18 @@ for e in extent:
     .map(apply_opac_mask))
   
   # rename bands for ease
-  locs_stack_ls457 = locs_stack_ls457.select(bn457, bns457)
+  locs_stack_ls57 = locs_stack_ls57.select(bn57, bns57)
   
   # pull DSWE1 variations as configured
   if '1' in dswe:
     # pull DSWE1 and DSWE1 with algal mask if configured
     if '1a' in dswe:
-      print('Starting Landsat 4, 5, 7 DSWE 1 acquisition for ' + e + ' configuration at tile ' + str(tiles))
-      locs_out_457_D1 = locs_stack_ls457.map(ref_pull_457_DSWE1).flatten()
-      locs_out_457_D1 = locs_out_457_D1.filter(ee.Filter.notNull(['med_Blue']))
-      locs_srname_457_D1 = proj+'_point_LS457_C2_SRST_DSWE1_'+str(tiles)+'_v'+run_date
-      locs_dataOut_457_D1 = (ee.batch.Export.table.toDrive(collection = locs_out_457_D1,
-                                              description = locs_srname_457_D1,
+      print('Starting Landsat 5, 7 DSWE 1 acquisition for ' + e + ' configuration at tile ' + str(tiles))
+      locs_out_57_D1 = locs_stack_ls57.map(ref_pull_57_DSWE1).flatten()
+      locs_out_57_D1 = locs_out_57_D1.filter(ee.Filter.notNull(['med_Blue']))
+      locs_srname_57_D1 = proj+'_point_LS57_C2_SRST_DSWE1_'+str(tiles)+'_v'+run_date
+      locs_dataOut_57_D1 = (ee.batch.Export.table.toDrive(collection = locs_out_57_D1,
+                                              description = locs_srname_57_D1,
                                               folder = proj_folder,
                                               fileFormat = 'csv',
                                               selectors = ['system:index',
@@ -211,14 +173,14 @@ for e in extent:
       #Check how many existing tasks are running and take a break of 120 secs if it's >25 
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
-      locs_dataOut_457_D1.start()
-      print('Completed Landsat 4, 5, 7 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
-      print('Starting Landsat 4, 5, 7 DSWE 1a acquisition for ' + e + ' configuration at tile ' + str(tiles))
-      locs_out_457_D1a = locs_stack_ls457.map(ref_pull_457_DSWE1a).flatten()
-      locs_out_457_D1a = locs_out_457_D1a.filter(ee.Filter.notNull(['med_Blue']))
-      locs_srname_457_D1a = proj+'_point_LS457_C2_SRST_DSWE1a_'+str(tiles)+'_v'+run_date
-      locs_dataOut_457_D1a = (ee.batch.Export.table.toDrive(collection = locs_out_457_D1a,
-                                              description = locs_srname_457_D1a,
+      locs_dataOut_57_D1.start()
+      print('Completed Landsat 5, 7 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
+      print('Starting Landsat 5, 7 DSWE 1a acquisition for ' + e + ' configuration at tile ' + str(tiles))
+      locs_out_57_D1a = locs_stack_ls57.map(ref_pull_57_DSWE1a).flatten()
+      locs_out_57_D1a = locs_out_57_D1a.filter(ee.Filter.notNull(['med_Blue']))
+      locs_srname_57_D1a = proj+'_point_LS57_C2_SRST_DSWE1a_'+str(tiles)+'_v'+run_date
+      locs_dataOut_57_D1a = (ee.batch.Export.table.toDrive(collection = locs_out_57_D1a,
+                                              description = locs_srname_57_D1a,
                                               folder = proj_folder,
                                               fileFormat = 'csv',
                                               selectors = ['system:index',
@@ -235,18 +197,18 @@ for e in extent:
       #Check how many existing tasks are running and take a break of 120 secs if it's >25 
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
-      locs_dataOut_457_D1a.start()
-      print('Completed Landsat 4, 5, 7 DSWE 1a stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
+      locs_dataOut_57_D1a.start()
+      print('Completed Landsat 5, 7 DSWE 1a stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
     
     else: 
-      print('Not configured to acquire DSWE 1a stack for Landsat 4, 5, 7 for ' + e + ' configuration')
+      print('Not configured to acquire DSWE 1a stack for Landsat 5, 7 for ' + e + ' configuration')
       # and pull DSWE1
-      print('Starting Landsat 4, 5, 7 DSWE1 acquisition for ' + e + ' configuration at tile ' + str(tiles))
-      locs_out_457_D1 = locs_stack_ls457.map(ref_pull_457_DSWE1).flatten()
-      locs_out_457_D1 = locs_out_457_D1.filter(ee.Filter.notNull(['med_Blue']))
-      locs_srname_457_D1 = proj+'_point_LS457_C2_SRST_DSWE1_'+str(tiles)+'_v'+run_date
-      locs_dataOut_457_D1 = (ee.batch.Export.table.toDrive(collection = locs_out_457_D1,
-                                              description = locs_srname_457_D1,
+      print('Starting Landsat 5, 7 DSWE1 acquisition for ' + e + ' configuration at tile ' + str(tiles))
+      locs_out_57_D1 = locs_stack_ls57.map(ref_pull_57_DSWE1).flatten()
+      locs_out_57_D1 = locs_out_57_D1.filter(ee.Filter.notNull(['med_Blue']))
+      locs_srname_57_D1 = proj+'_point_LS57_C2_SRST_DSWE1_'+str(tiles)+'_v'+run_date
+      locs_dataOut_57_D1 = (ee.batch.Export.table.toDrive(collection = locs_out_57_D1,
+                                              description = locs_srname_57_D1,
                                               folder = proj_folder,
                                               fileFormat = 'csv',
                                               selectors = ['system:index',
@@ -263,20 +225,20 @@ for e in extent:
       #Check how many existing tasks are running and take a break of 120 secs if it's >25 
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
-      locs_dataOut_457_D1.start()
-      print('Completed Landsat 4, 5, 7 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
+      locs_dataOut_57_D1.start()
+      print('Completed Landsat 5, 7 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
     
-  else: print('Not configured to acquire DSWE 1 or DSWE 1a stack for Landsat 4, 5, 7 for ' + e + ' configuration')
+  else: print('Not configured to acquire DSWE 1 or DSWE 1a stack for Landsat 5, 7 for ' + e + ' configuration')
   
   # pull DSWE3 variants if configured
   if '3' in dswe:
     # pull DSWE3
-    print('Starting Landsat 4, 5, 7 DSWE3 acquisition for ' + e + ' configuration at tile ' + str(tiles))
-    locs_out_457_D3 = locs_stack_ls457.map(ref_pull_457_DSWE3).flatten()
-    locs_out_457_D3 = locs_out_457_D3.filter(ee.Filter.notNull(['med_Blue']))
-    locs_srname_457_D3 = proj+'_point_LS457_C2_SRST_DSWE3_'+str(tiles)+'_v'+run_date
-    locs_dataOut_457_D3 = (ee.batch.Export.table.toDrive(collection = locs_out_457_D3,
-                                            description = locs_srname_457_D3,
+    print('Starting Landsat 5, 7 DSWE3 acquisition for ' + e + ' configuration at tile ' + str(tiles))
+    locs_out_57_D3 = locs_stack_ls57.map(ref_pull_57_DSWE3).flatten()
+    locs_out_57_D3 = locs_out_57_D3.filter(ee.Filter.notNull(['med_Blue']))
+    locs_srname_57_D3 = proj+'_point_LS57_C2_SRST_DSWE3_'+str(tiles)+'_v'+run_date
+    locs_dataOut_57_D3 = (ee.batch.Export.table.toDrive(collection = locs_out_57_D3,
+                                            description = locs_srname_57_D3,
                                             folder = proj_folder,
                                             fileFormat = 'csv',
                                             selectors = ['system:index',
@@ -293,10 +255,10 @@ for e in extent:
     #Check how many existing tasks are running and take a break of 120 secs if it's >25 
     maximum_no_of_tasks(10, 120)
     #Send next task.                                        
-    locs_dataOut_457_D3.start()
-    print('Completed Landsat 4, 5, 7 DSWE 3 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
+    locs_dataOut_57_D3.start()
+    print('Completed Landsat 5, 7 DSWE 3 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
     
-  else: print('Not configured to acquire DSWE 3 stack for Landsat 4, 5, 7 for ' + e + ' configuration')
+  else: print('Not configured to acquire DSWE 3 stack for Landsat 5, 7 for ' + e + ' configuration')
 
 
 
@@ -446,24 +408,24 @@ for e in extent:
 
 
 ##############################################
-##---- LANDSAT 457 METADATA ACQUISITION ----##
+##---- LANDSAT 57 METADATA ACQUISITION ----##
 ##############################################
 
-print('Starting Landsat 4, 5, 7 metadata acquisition for tile ' +str(tiles))
+print('Starting Landsat 5, 7 metadata acquisition for tile ' +str(tiles))
 
 ## get metadata ##
-meta_srname_457 = proj+'_metadata_LS457_C2_'+str(tiles)+'_v'+run_date
-meta_dataOut_457 = (ee.batch.Export.table.toDrive(collection = ls457,
-                                        description = meta_srname_457,
+meta_srname_57 = proj+'_metadata_LS57_C2_'+str(tiles)+'_v'+run_date
+meta_dataOut_57 = (ee.batch.Export.table.toDrive(collection = ls57,
+                                        description = meta_srname_57,
                                         folder = proj_folder,
                                         fileFormat = 'csv'))
 
 #Check how many existing tasks are running and take a break of 120 secs if it's >25 
 maximum_no_of_tasks(10, 120)
 #Send next task.                                        
-meta_dataOut_457.start()
+meta_dataOut_57.start()
 
-print('Completed Landsat 4, 5, 7 metadata acquisition for tile ' + str(tiles))
+print('Completed Landsat 5, 7 metadata acquisition for tile ' + str(tiles))
 
 
 #############################################
@@ -492,7 +454,7 @@ print('completed Landsat 8, 9 metadata acquisition for tile ' + str(tiles))
 #############################################
 
 ls89_id_stack = ls89.aggregate_array('L1_LANDSAT_PRODUCT_ID').getInfo()
-ls457_id_stack = ls457.aggregate_array('L1_LANDSAT_PRODUCT_ID').getInfo()
+ls57_id_stack = ls57.aggregate_array('L1_LANDSAT_PRODUCT_ID').getInfo()
 
 # open file in write mode and save each id as a row
 with open(('data_acquisition/out/L89_stack_ids_v'+run_date+'.txt'), 'w') as fp:
@@ -502,8 +464,8 @@ with open(('data_acquisition/out/L89_stack_ids_v'+run_date+'.txt'), 'w') as fp:
     print('Done')
 
 # open file in write mode and save each id as a row
-with open(('data_acquisition/out/L457_stack_ids_v'+run_date+'.txt'), 'w') as fp:
-    for id in ls457_id_stack:
+with open(('data_acquisition/out/L57_stack_ids_v'+run_date+'.txt'), 'w') as fp:
+    for id in ls57_id_stack:
         # write each item on a new line
         fp.write("%s\n" % id)
     print('Done')

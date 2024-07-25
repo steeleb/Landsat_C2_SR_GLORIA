@@ -6,17 +6,13 @@ yaml_file <- "gloria_config.yml"
 
 # Set up python virtual environment ---------------------------------------
 
-if (!dir.exists("env")) {
-  tar_source("data_acquisition/src/pySetup.R")
-} else {
-  use_condaenv(file.path(getwd(), "env"))
-}
+tar_source("data_acquisition/pySetup.R")
 
 
 # Source functions --------------------------------------------------------
 
-tar_source("data_acquisition/src/general_functions.R")
-source_python("data_acquisition/src/gee_functions.py")
+tar_source("data_acquisition/src/")
+source_python("data_acquisition/py/gee_functions.py")
 
 
 # Define {targets} workflow -----------------------------------------------
@@ -89,27 +85,10 @@ b_data_acquisition <- list(
     command = {
       yml
       locs
-      csv_to_eeFeat
-      apply_scale_factors
-      dp_buff #this function has been altered from the upstream dp_buff
-      DSWE
-      Mbsrv
-      Ndvi
-      Mbsrn
-      Mndwi
-      Awesh
-      add_rad_mask
-      sr_cloud_mask
-      sr_aerosol
-      cf_mask
-      calc_hill_shadows
-      calc_hill_shades
-      remove_geo
-      maximum_no_of_tasks
       ref_pull_57_DSWE1
+      ref_pull_57_DSWE1a
       ref_pull_89_DSWE1
-      ref_pull_57_DSWE3
-      ref_pull_89_DSWE3
+      ref_pull_89_DSWE1a
       run_GEE_per_tile(WRS_tiles)
     },
     pattern = map(WRS_tiles),
