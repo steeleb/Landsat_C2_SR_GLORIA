@@ -50,7 +50,7 @@ You will need to have [installed and initialized the `gcloud CLI`](https://cloud
 ```{r eval = F}
 library(reticulate)
 if (!dir.exists("env")) {
-  source("data_acquisition/src/pySetup.R")
+  source("b_data_acquisition/src/pySetup.R")
 } else {
   use_condaenv(file.path(getwd(), "env"))
 }

@@ -1,0 +1,2 @@
+data_dir,location_file,unique_id,latitude,longitude,location_crs,polygon,poly_crs,poly_dir,poly_file,proj,proj_folder,ee_proj,run_date,start_date,end_date,extent,site_buffer,cloud_filter,cloud_thresh,water_detection,DSWE_setting
+/Users/steeleb/Documents/GitHub/Landsat_C2_SR_GLORIA/data/,collated_locations_for_pull.csv,rowid,Latitude,Longitude,EPSG:4326,False,,,,SR_GLORIA,SR_GLORIA,ee-ls-c2-srst,2024-07-25,1983-01-01,2024-01-01,site,150,True,95,DSWE,1a

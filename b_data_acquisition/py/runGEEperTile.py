@@ -3,18 +3,17 @@ import ee
 import time
 from datetime import date, datetime
 import os 
-import fiona
 from pandas import read_csv
 
 # get locations and yml from data folder
-yml = read_csv('data_acquisition/in/yml.csv')
+yml = read_csv('b_data_acquisition/in/yml.csv')
 
 eeproj = yml['ee_proj'][0]
 #initialize GEE
 ee.Initialize(project = eeproj)
 
 # get current tile
-with open('data_acquisition/out/current_tile.txt', 'r') as file:
+with open('b_data_acquisition/out/current_tile.txt', 'r') as file:
   tiles = file.read()
 
 # get EE/Google settings from yml file
@@ -46,68 +45,108 @@ extent = (yml['extent'][0]
   .split('+'))
 
 if 'site' in extent:
-  locations = read_csv('data_acquisition/in/locs.csv')
+  locations = read_csv('b_data_acquisition/in/locs.csv')
   # convert locations to an eeFeatureCollection
   locs_feature = csv_to_eeFeat(locations, yml['location_crs'][0])
+
+if 'poly' in extent:
+  #if polygon is in extent, check for shapefile
+  shapefile = yml['polygon'][0]
+  # if shapefile provided by user 
+  if shapefile == True:
+    # load the shapefile into a Fiona object
+    with fiona.open('b_data_acquisition/out/user_polygon.shp') as src:
+      shapes = ([ee.Geometry.Polygon(
+        [[x[0], x[1]] for x in feature['geometry']['coordinates'][0]]
+        ) for feature in src])
+  else: #otherwise use the NHDPlus file
+    # load the shapefile into a Fiona object
+    with fiona.open('b_data_acquisition/out/NHDPlus_polygon.shp') as src:
+      shapes = ([ee.Geometry.Polygon(
+        [[x[0], x[1]] for x in feature['geometry']['coordinates'][0]]
+        ) for feature in src])
+  # Create an ee.Feature for each shape
+  features = [ee.Feature(shape, {}) for shape in shapes]
+  # Create an ee.FeatureCollection from the ee.Features
+  poly_feat = ee.FeatureCollection(features)
+
+if 'center' in extent:
+  if yml['polygon'][0] == True:
+    centers_csv = read_csv('b_data_acquisition/out/user_polygon_centers.csv')
+    # load the shapefile into a Fiona object
+    centers = csv_to_eeFeat(centers_csv, yml['poly_crs'][0])
+  else: #otherwise use the NHDPlus file
+    centers_csv = read_csv('b_data_acquisition/out/NHDPlus_polygon_centers.csv')
+    centers = csv_to_eeFeat(centers_csv, 'EPSG:4326')
+  # Create an ee.FeatureCollection from the ee.Features
+  ee_centers = ee.FeatureCollection(centers)    
   
 
 ##############################################
 ##---- CREATING EE FEATURECOLLECTIONS   ----##
 ##############################################
 
-
 wrs = (ee.FeatureCollection('projects/ee-ls-c2-srst/assets/WRS2_descending')
   .filterMetadata('PR', 'equals', tiles))
+
+wrs_path = tiles[:3]
+wrs_row = tiles[-3:]
 
 #grab images and apply scaling factors
 l7 = (ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')
     .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
-    .filterDate(yml_start, yml_end))
+    .filterDate(yml_start, yml_end)
+    .filter(ee.Filter.eq('WRS_PATH', wrs_path))
+    .filter(ee.Filter.eq('WRS_ROW', wrs_row)))
 l5 = (ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')
     .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
-    .filterDate(yml_start, yml_end))
-
+    .filterDate(yml_start, yml_end)
+    .filter(ee.Filter.eq('WRS_PATH', wrs_path))
+    .filter(ee.Filter.eq('WRS_ROW', wrs_row)))
 # merge collections by image processing groups
-ls57 = (ee.ImageCollection(l5.merge(l7))
-    .filterBounds(wrs))  
-    
+ls57 = ee.ImageCollection(l5.merge(l7))
+
 # existing band names
 bn57 = (['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B7', 
   'QA_PIXEL', 'SR_CLOUD_QA', 'QA_RADSAT', 'ST_B6', 
   'ST_QA', 'ST_CDIST', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
   'ST_EMSD', 'ST_TRAD', 'ST_URAD'])
-  
+
 # new band names
 bns57 = (['Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
   'pixel_qa', 'cloud_qa', 'radsat_qa', 'SurfaceTemp', 
   'temp_qa', 'ST_CDIST', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
   'ST_EMSD', 'ST_TRAD', 'ST_URAD'])
-  
 
 
 #grab images and apply scaling factors
 l8 = (ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
     .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
-    .filterDate(yml_start, yml_end))
+    .filterDate(yml_start, yml_end)
+    .filter(ee.Filter.eq('WRS_PATH', wrs_path))
+    .filter(ee.Filter.eq('WRS_ROW', wrs_row)))
 l9 = (ee.ImageCollection('LANDSAT/LC09/C02/T1_L2')
     .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
-    .filterDate(yml_start, yml_end))
+    .filterDate(yml_start, yml_end)
+    .filter(ee.Filter.eq('WRS_PATH', wrs_path))
+    .filter(ee.Filter.eq('WRS_ROW', wrs_row)))
+
 
 # merge collections by image processing groups
-ls89 = ee.ImageCollection(l8.merge(l9)).filterBounds(wrs)  
-    
+ls89 = ee.ImageCollection(l8.merge(l9))
+
 # existing band names
 bn89 = (['SR_B1', 'SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7', 
   'QA_PIXEL', 'SR_QA_AEROSOL', 'QA_RADSAT', 'ST_B10', 
   'ST_QA', 'ST_CDIST', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
   'ST_EMSD', 'ST_TRAD', 'ST_URAD'])
-  
+
 # new band names
 bns89 = (['Aerosol','Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2',
   'pixel_qa', 'aerosol_qa', 'radsat_qa', 'SurfaceTemp', 
   'temp_qa', 'ST_CDIST', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
   'ST_EMSD', 'ST_TRAD', 'ST_URAD'])
- 
+
 
 ##########################################
 ##---- LANDSAT 57 ACQUISITION      ----##
@@ -174,7 +213,6 @@ for e in extent:
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
       locs_dataOut_57_D1.start()
-      print('Completed Landsat 5, 7 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
       print('Starting Landsat 5, 7 DSWE 1a acquisition for ' + e + ' configuration at tile ' + str(tiles))
       locs_out_57_D1a = locs_stack_ls57.map(ref_pull_57_DSWE1a).flatten()
       locs_out_57_D1a = locs_out_57_D1a.filter(ee.Filter.notNull(['med_Blue']))
@@ -198,8 +236,6 @@ for e in extent:
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
       locs_dataOut_57_D1a.start()
-      print('Completed Landsat 5, 7 DSWE 1a stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
-    
     else: 
       print('Not configured to acquire DSWE 1a stack for Landsat 5, 7 for ' + e + ' configuration')
       # and pull DSWE1
@@ -226,8 +262,6 @@ for e in extent:
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
       locs_dataOut_57_D1.start()
-      print('Completed Landsat 5, 7 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
-    
   else: print('Not configured to acquire DSWE 1 or DSWE 1a stack for Landsat 5, 7 for ' + e + ' configuration')
   
   # pull DSWE3 variants if configured
@@ -256,8 +290,6 @@ for e in extent:
     maximum_no_of_tasks(10, 120)
     #Send next task.                                        
     locs_dataOut_57_D3.start()
-    print('Completed Landsat 5, 7 DSWE 3 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
-    
   else: print('Not configured to acquire DSWE 3 stack for Landsat 5, 7 for ' + e + ' configuration')
 
 
@@ -324,7 +356,6 @@ for e in extent:
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
       locs_dataOut_89_D1.start()
-      print('Completed Landsat 8, 9 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
       print('Starting Landsat 8, 9 DSWE 1a acquisition for ' + e + ' configuration at tile ' + str(tiles))
       locs_out_89_D1a = locs_stack_ls89.map(ref_pull_89_DSWE1a).flatten()
       locs_out_89_D1a = locs_out_89_D1a.filter(ee.Filter.notNull(['med_Blue']))
@@ -348,7 +379,6 @@ for e in extent:
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
       locs_dataOut_89_D1a.start()
-      print('Completed Landsat 8, 9 DSWE 1a stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
     else:
       print("Not configured to acquire DSWE 1a stack for Landsat 8, 9 for ' + e + ' configuration")
       print('Starting Landsat 8, 9 DSWE1 acquisition for ' + e + ' configuration at tile ' + str(tiles))
@@ -374,8 +404,6 @@ for e in extent:
       maximum_no_of_tasks(10, 120)
       #Send next task.                                        
       locs_dataOut_89_D1.start()
-      print('Completed Landsat 8, 9 DSWE 1 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
-  
   else: print('Not configured to acquire DSWE 1 stack for Landsat 8, 9 for ' + e + ' configuration')
   
   if '3' in dswe:
@@ -402,9 +430,9 @@ for e in extent:
     maximum_no_of_tasks(10, 120)
     #Send next task.                                        
     locs_dataOut_89_D3.start()
-    print('Completed Landsat 8, 9 DSWE 3 stack acquisitions for ' + e + ' configuration at tile ' + str(tiles))
-  
-  else: print('Not configured to acquire DSWE 3 stack for Landsat 8,9 for ' + e + ' configuration')
+  else:
+    print('Not configured to acquire DSWE 3 stack for Landsat 8,9 for ' + e + ' configuration')
+
 
 
 ##############################################
@@ -425,8 +453,6 @@ maximum_no_of_tasks(10, 120)
 #Send next task.                                        
 meta_dataOut_57.start()
 
-print('Completed Landsat 5, 7 metadata acquisition for tile ' + str(tiles))
-
 
 #############################################
 ##---- LANDSAT 89 METADATA ACQUISITION ----##
@@ -446,27 +472,3 @@ maximum_no_of_tasks(10, 120)
 #Send next task.                                        
 meta_dataOut_89.start()
 
-print('completed Landsat 8, 9 metadata acquisition for tile ' + str(tiles))
-
-
-#############################################
-##---- DOCUMENT Landsat IDs ACQUIRED   ----##
-#############################################
-
-ls89_id_stack = ls89.aggregate_array('L1_LANDSAT_PRODUCT_ID').getInfo()
-ls57_id_stack = ls57.aggregate_array('L1_LANDSAT_PRODUCT_ID').getInfo()
-
-# open file in write mode and save each id as a row
-with open(('data_acquisition/out/L89_stack_ids_v'+run_date+'.txt'), 'w') as fp:
-    for id in ls89_id_stack:
-        # write each item on a new line
-        fp.write("%s\n" % id)
-    print('Done')
-
-# open file in write mode and save each id as a row
-with open(('data_acquisition/out/L57_stack_ids_v'+run_date+'.txt'), 'w') as fp:
-    for id in ls57_id_stack:
-        # write each item on a new line
-        fp.write("%s\n" % id)
-    print('Done')
-    

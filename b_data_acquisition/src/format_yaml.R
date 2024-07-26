@@ -33,7 +33,7 @@ format_yaml <-  function(yml_file) {
     select(desc, param) %>% 
     pivot_wider(names_from = desc, 
                 values_from = param)
-  write_csv(unnested, "data_acquisition/in/yml.csv")
-  "data_acquisition/in/yml.csv"
+  write_csv(unnested, "b_data_acquisition/in/yml.csv")
+  "b_data_acquisition/in/yml.csv"
 }
 
