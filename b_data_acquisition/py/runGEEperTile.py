@@ -3,6 +3,7 @@ import ee
 import time
 from datetime import date, datetime
 import os 
+import fiona
 from pandas import read_csv
 
 # get locations and yml from data folder
@@ -89,8 +90,8 @@ if 'center' in extent:
 wrs = (ee.FeatureCollection('projects/ee-ls-c2-srst/assets/WRS2_descending')
   .filterMetadata('PR', 'equals', tiles))
 
-wrs_path = tiles[:3]
-wrs_row = tiles[-3:]
+wrs_path = int(tiles[:3])
+wrs_row = int(tiles[-3:])
 
 #grab images and apply scaling factors
 l7 = (ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')

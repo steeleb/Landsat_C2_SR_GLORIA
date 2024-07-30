@@ -18,7 +18,8 @@ source_python("b_data_acquisition/py/gee_functions.py")
 # Define {targets} workflow -----------------------------------------------
 
 # Set target-specific options such as packages.
-tar_option_set(packages = "tidyverse")
+tar_option_set(packages = "tidyverse",
+               workspace_on_error = TRUE)
 
 b_data_acquisition <- list(
   # read and track the config file
@@ -77,7 +78,11 @@ b_data_acquisition <- list(
   # run the Landsat pull as function per tile
   tar_target(
     name = eeRun,
-    command = run_GEE_per_tile(WRS_tiles, depends = c(yml, locs)),
+    command = {
+      yml
+      locs
+      run_GEE_per_tile(WRS_tile = WRS_tiles)
+    },
     pattern = map(WRS_tiles),
     packages = "reticulate"
   )

@@ -14,90 +14,54 @@ suppressWarnings({
 })
 
 c_data_download_collation <- list(
-  # download the NW and CLP data from Google Drive
+  # check to see that all tasks are complete! This target will run until all
+  # cued GEE tasks from the previous target are complete.
   tar_target(
-    name = b_downloaded_historical_NW_CLP,
+    name = poi_tasks_complete,
     command = {
-      a_collated_pts_to_csv 
-      download_csvs_from_drive(drive_folder_name = paste0("LS-C2-SR-NW_CLP_Poly-Points-v", 
-                                                          Sys.getenv("nw_clp_pull_version_date")), 
-                               version_identifier = Sys.getenv("nw_clp_pull_version_date"))
+      eeRun
+      source_python("c_data_download_collation/py/poi_wait_for_completion.py")
     },
-    packages = c("tidyverse", "googledrive"),
-    cue = tar_cue(depend = T)
+    packages = "reticulate"
   ),
-  # and do the same for the regional data
+    
+  # download the GLORIA data from Google Drive
   tar_target(
-    name = b_downloaded_historical_regional,
+    name = c_download_GLORIA_files,
     command = {
-      a_collated_pts_to_csv
-      download_csvs_from_drive(drive_folder_name = paste0("LS-C2-SR-RegionalPoints-v", 
-                                                          Sys.getenv("regional_pull_version_date")),
-                               version_identifier = Sys.getenv("regional_pull_version_date"))
-    },
+      poi_tasks_complete
+      download_csvs_from_drive(drive_folder_name = config_file$google_settings[[2]]$proj,
+                                       google_email = config_file$google_settings[[1]]$google_email,
+                                       version_identifier = config_file$google_settings[[5]]$run_date)
+      },
     packages = c("tidyverse", "googledrive")
   ),
-  # and load/collate those data, with each type as a new feather file
-  # first with the NW/CLP data
+  
   tar_target(
-    name = b_collated_historical_NW_CLP,
+    name = c_collated_GLORIA,
+    command = collate_csvs_from_drive(file_prefix = config_file$google_settings[[2]]$proj, 
+                                      version_identifier = config_file$google_settings[[5]]$run_date)
+  ),
+  
+  # and collate the data with metadata
+  tar_target(
+    name = b_GLORIA_SR_metadata,
     command = {
-      b_downloaded_historical_NW_CLP
-      collate_csvs_from_drive(file_prefix = "NW-Poudre-Historical", 
-                              version_identifier = Sys.getenv("nw_clp_pull_version_date"))
+      c_collated_GLORIA
+      combine_metadata_with_pulls(file_prefix = config_file$google_settings[[2]]$proj,
+                                  version_identifier = config_file$google_settings[[5]]$run_date,
+                                  collation_identifier = "2024-07-30")
     },
     packages = c("tidyverse", "feather")
-  ),
-  # and now for the regional data
-  tar_target(
-    name = b_collated_historical_regional,
-    command = {
-      b_downloaded_historical_regional
-      collate_csvs_from_drive(file_prefix = "NW-Poudre-Regional", 
-                              version_identifier = Sys.getenv("regional_pull_version_date"))
-    },
-    packages = c("tidyverse", "feather")
-  ),
-  # now, add metadata to tabular summaries and break out the DSWE 1/3 data
-  # first for the regional data
-  tar_target(
-    name = b_combined_regional_metadata_data,
-    command = {
-      b_collated_historical_regional
-      combine_metadata_with_pulls(file_prefix = "NW-Poudre-Regional", 
-                                  version_identifier = Sys.getenv("regional_pull_version_date"),
-                                  collation_identifier = Sys.getenv("collation_date"))
-    },
-    packages = c("tidyverse", "feather")
-  ),
-  # and then for the NW/CLP data
-  tar_target(
-    name = b_combined_NW_CLP_metadata_data,
-    command = {
-      b_collated_historical_NW_CLP
-      combine_metadata_with_pulls(file_prefix = "NW-Poudre-Historical", 
-                                  version_identifier = Sys.getenv("nw_clp_pull_version_date"),
-                                  collation_identifier = Sys.getenv("collation_date"))
-    },
-    packages = c("tidyverse", "feather")
-  ),
-  # make a list of the collated files to branch over
-  tar_target(
-    name = b_collated_files,
-    command = {
-      b_combined_NW_CLP_metadata_data
-      b_combined_regional_metadata_data
-      list.files('b_historical_RS_data_collation/out/', 
-                 full.names = T,
-                 pattern = Sys.getenv("collation_date")) %>% 
-        .[grepl('collated', .)]
-    }
-  ),
-  # pass the QAQC filter over each of the listed files, creating filtered files
-  tar_target(
-    name = b_QAQC_filtered_data,
-    command = baseline_QAQC_RS_data(filepath = b_collated_files),
-    packages = c("tidyverse", "feather"),
-    pattern = map(b_collated_files)
   )
+  # check for dupes! Should be taken care of now
+  #,
+  # 
+  # # pass the QAQC filter over each of the listed files, creating filtered files
+  # tar_target(
+  #   name = b_QAQC_filtered_data,
+  #   command = baseline_QAQC_RS_data(filepath = b_collated_files),
+  #   packages = c("tidyverse", "feather"),
+  #   pattern = map(b_collated_files)
+  # )
 )

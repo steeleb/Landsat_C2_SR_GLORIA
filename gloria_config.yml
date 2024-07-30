@@ -17,6 +17,7 @@ local_settings:
 - poly_file: "" # optional. name of the shapefile that contains the lake polygons. 
 
 google_settings:
+- google_email: "therossyndicate@gmail.com" # email address associated with Google Drive account
 - proj: "SR_GLORIA" # this is a short name for file naming conventions. All output files will include this prefix.
 - proj_folder: "SR_GLORIA" # this is the folder name where the GEE data will be save to Google Drive. If it doesn't exist, it will be created.
 - ee_proj: "ee-ls-c2-srst" # this is the ee project name you are running your pulls from
@@ -31,7 +32,7 @@ temporal_settings:
 
 spatial_settings: 
 - extent: "site" # options: "site", "polygon", "polycenter", "site+poly", "site+polygon+polycenter", "polygon+polycenter" - at this time lake and lake center can only be calculated for lakes in the US
-- site_buffer: 150 # width of square buffer - in this case, 5x30 for a 5x5 square
+- site_buffer: 150 # width of square buffer - inh this case, 5x30 for a 5x5 square
 
 gee_settings:
 - cloud_filter: "True" # True or False - if True, scenes will be filtered by scene-level cloudy value provided in the metadata

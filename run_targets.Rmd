@@ -49,22 +49,19 @@ You will need to have [installed and initialized the `gcloud CLI`](https://cloud
 
 ```{r eval = F}
 library(reticulate)
-if (!dir.exists("env")) {
-  source("b_data_acquisition/src/pySetup.R")
-} else {
-  use_condaenv(file.path(getwd(), "env"))
-}
+source("b_data_acquisition/py/pySetup.R")
 ```
 
 ### Authentication
 
-To authenticate your GEE account, you must execute the following command and follow the prompts in your browser:
+To authenticate your GEE account, you must execute the following code chunk and follow the prompts in your browser:
 
-```{python eval = F}
-ee.Authenticate()
+```{python}
+import ee
+ee.Authenticate(auth_mode='localhost')
 ```
 
-When complete, your your terminal will read:
+When complete, your your browser will read:
 
 `Successfully saved authorization token.`
 

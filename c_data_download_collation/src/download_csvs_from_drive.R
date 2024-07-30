@@ -5,18 +5,16 @@
 #' to the untracked b_historical_RS_data_collation/in/ folder
 #'
 #' @param drive_folder_name text string; name of folder in Drive, must be unique
+#' @param google_email text string; google email address for Drive authentication
 #' @param version_identifier user-specified string to identify the RS pull these
 #' data are associated with
 #' 
 #' @returns downloads all .csvs from the specified folder name to the
-#' b_historical_RS_data_collation/in/ folder
-#' 
-#' @note This function requires that you have created an .Renviron option whose
-#' key is 'google_email' and value is the ROSS gmail
+#' c_data_download_collation/in/ folder
 #' 
 #' 
-download_csvs_from_drive <- function(drive_folder_name, version_identifier) {
-  drive_auth(email = Sys.getenv("google_email"))
+download_csvs_from_drive <- function(drive_folder_name, google_email, version_identifier) {
+  drive_auth(email = google_email)
   dribble_files <- drive_ls(path = drive_folder_name)
   dribble_files <- dribble_files %>% 
     filter(grepl(".csv", name))
