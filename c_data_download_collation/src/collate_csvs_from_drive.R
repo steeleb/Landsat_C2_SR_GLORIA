@@ -33,7 +33,15 @@ collate_csvs_from_drive <- function(file_prefix, version_identifier) {
     # collate files, but add the filename, since this *could be* is DSWE 1 + 3
     all_points <- map_dfr(.x = point_files, 
                          .f = function(.x) {
-                           read_csv(.x) %>% mutate(source = .x)
+                           file_name = str_split(.x, '/')[[1]][5]
+                           df <- read_csv(.x) 
+                           # grab all column names except system:index
+                           df_names <- colnames(df)[2:length(colnames(df))]
+                           # and coerce them to numeric for joining later
+                           df %>% 
+                             mutate(across(all_of(df_names),
+                                           ~ as.numeric(.)))%>% 
+                             mutate(source = file_name)
                            }) 
     write_feather(all_points, file.path("c_data_download_collation/mid/",
                                     paste0(file_prefix, "_collated_points_",
@@ -45,9 +53,11 @@ collate_csvs_from_drive <- function(file_prefix, version_identifier) {
     center_files <- files[grepl("center", files)]
     # collate files, but add the filename, since this *could be* is DSWE 1 + 3
     all_centers <- map_dfr(.x = center_files, 
-                         .f = function(.x) {
-                           read_csv(.x) %>% mutate(source = .x)
-                         }) 
+                           .f = function(.x) {
+                             file_name = str_split(.x, '/')[[1]][5]
+                             read_csv(.x) %>% 
+                               mutate(source = file_name)
+                           }) 
     write_feather(all_centers, file.path("c_data_download_collation/mid/",
                                     paste0(file_prefix, "_collated_centers_",
                                            version_identifier, ".feather")))
@@ -59,7 +69,9 @@ collate_csvs_from_drive <- function(file_prefix, version_identifier) {
     # collate files, but add the filename, since this *could be* is DSWE 1 + 3
     all_polys <- map_dfr(.x = poly_files,
                          .f = function(.x) {
-                           read_csv(.x) %>% mutate(source = .x)
+                           file_name = str_split(.x, '/')[[1]][5]
+                           read_csv(.x) %>% 
+                             mutate(source = file_name)
                          })
 
     write_feather(all_polys, file.path("c_data_download_collation/mid/",

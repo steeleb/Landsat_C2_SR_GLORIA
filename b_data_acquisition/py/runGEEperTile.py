@@ -97,6 +97,7 @@ wrs_row = int(tiles[-3:])
 l7 = (ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')
     .filter(ee.Filter.lt('CLOUD_COVER', ee.Number.parse(str(cloud_thresh))))
     .filterDate(yml_start, yml_end)
+    .filterDate('1999-05-28', '2019-12-31') # for valid dates
     .filter(ee.Filter.eq('WRS_PATH', wrs_path))
     .filter(ee.Filter.eq('WRS_ROW', wrs_row)))
 l5 = (ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')
@@ -179,9 +180,9 @@ for e in extent:
   locs_stack_ls57 = (ls57
     .filterBounds(feat.geometry()) 
     # apply fill mask and scaling factors
-    .map(apply_fill_mask)
+    .map(apply_fill_mask_457)
     .map(apply_scale_factors)
-    .map(apply_realistic_mask)
+    .map(apply_realistic_mask_457)
     .map(apply_opac_mask))
   
   # rename bands for ease
@@ -324,9 +325,9 @@ for e in extent:
   locs_stack_ls89 = (ls89
     .filterBounds(feat.geometry()) 
     # apply fill mask and scaling factors
-    .map(apply_fill_mask)
+    .map(apply_fill_mask_89)
     .map(apply_scale_factors)
-    .map(apply_realistic_mask)
+    .map(apply_realistic_mask_89)
     .map(apply_high_aero_mask))
   
   # rename bands for ease

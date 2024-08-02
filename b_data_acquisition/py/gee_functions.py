@@ -302,8 +302,8 @@ def remove_geo(image):
   return image.setGeometry(None)
 
 
-def apply_fill_mask(image):
-  """ mask any fill values (0) in scaled raster
+def apply_fill_mask_457(image):
+  """ mask any fill values (0) in scaled raster for Landsat 4, 5, 7
   
   Args:
       image: ee.Image of an ee.ImageCollection
@@ -323,14 +323,42 @@ def apply_fill_mask(image):
     .And(b4_mask.eq(1))
     .And(b5_mask.eq(1))
     .And(b7_mask.eq(1))
-    .selfMask())
+    .selfMask()
+    )
+  return image.updateMask(fill_mask.eq(1))
+
+def apply_fill_mask_89(image):
+  """ mask any fill values (0) in scaled raster for Landsat 8,9
+  
+  Args:
+      image: ee.Image of an ee.ImageCollection
+
+  Returns:
+      an ee.Image where any values previously 0 are masked
+  """
+  b1_mask = image.select('SR_B1').gt(0)
+  b2_mask = image.select('SR_B2').gt(0)
+  b3_mask = image.select('SR_B3').gt(0)
+  b4_mask = image.select('SR_B4').gt(0)
+  b5_mask = image.select('SR_B5').gt(0)
+  b6_mask = image.select('SR_B6').gt(0)
+  b7_mask = image.select('SR_B7').gt(0)
+  fill_mask = (b1_mask.eq(1)
+    .And(b2_mask.eq(1))
+    .And(b3_mask.eq(1))
+    .And(b4_mask.eq(1))
+    .And(b5_mask.eq(1))
+    .And(b6_mask.eq(1))
+    .And(b7_mask.eq(1))
+    .selfMask()
+    )
   return image.updateMask(fill_mask.eq(1))
 
 
 # This should be applied AFTER scaling factors
 # Mask values less than -0.01
-def apply_realistic_mask(image):
-  """ mask out unrealistic SR values (those less than -0.01)
+def apply_realistic_mask_457(image):
+  """ mask out unrealistic SR values (those less than -0.01) in Landsat 4, 5, 7
   
   Args:
       image: ee.Image of an ee.ImageCollection
@@ -349,6 +377,32 @@ def apply_realistic_mask(image):
     .And(b3_mask.eq(1))
     .And(b4_mask.eq(1))
     .And(b5_mask.eq(1))
+    .And(b7_mask.eq(1))
+    .selfMask())
+  return image.updateMask(realistic.eq(1))
+
+def apply_realistic_mask_89(image):
+  """ mask out unrealistic SR values (those less than -0.01) in Landsat 8, 9
+  
+  Args:
+      image: ee.Image of an ee.ImageCollection
+
+  Returns:
+      an ee.Image where any re-scaled values <-0.01 are masked
+  """
+  b1_mask = image.select('SR_B1').gt(-0.01)
+  b2_mask = image.select('SR_B2').gt(-0.01)
+  b3_mask = image.select('SR_B3').gt(-0.01)
+  b4_mask = image.select('SR_B4').gt(-0.01)
+  b5_mask = image.select('SR_B5').gt(-0.01)
+  b6_mask = image.select('SR_B6').gt(-0.01)
+  b7_mask = image.select('SR_B7').gt(-0.01)
+  realistic = (b1_mask.eq(1)
+    .And(b2_mask.eq(1))
+    .And(b3_mask.eq(1))
+    .And(b4_mask.eq(1))
+    .And(b5_mask.eq(1))
+    .And(b6_mask.eq(1))
     .And(b7_mask.eq(1))
     .selfMask())
   return image.updateMask(realistic.eq(1))
@@ -434,20 +488,27 @@ def ref_pull_57_DSWE1(image):
   f = cf_mask(image).select('cfmask')
   # where the f mask is > 1, call that 1 (otherwise 0) and rename as clouds.
   clouds = f.gte(1).rename('clouds')
+  #calculate hillshade
+  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
+  #calculate hillshadow
+  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   #apply dswe function
   d = DSWE(image).select('dswe')
   gt0 = (d.gt(0).rename('dswe_gt0')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   dswe1 = (d.eq(1).rename('dswe1')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   # band where dswe is 3 and apply all masks
   dswe3 = (d.eq(3).rename('dswe3')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -462,6 +523,7 @@ def ref_pull_57_DSWE1(image):
   dswe1a = (d.eq(1)
     .Or(alg.eq(1))
     .rename('dswe1a')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -492,6 +554,8 @@ def ref_pull_57_DSWE1(image):
             .addBands(image.select(['SurfaceTemp']))
             .updateMask(d.eq(1)) # only high confidence water
             .updateMask(hs.eq(1)) # only illuminated pixels
+            .updateMask(f.eq(0))
+            .updateMask(r.eq(1))
             .addBands(gt0) 
             .addBands(dswe1)
             .addBands(dswe3)
@@ -546,20 +610,27 @@ def ref_pull_57_DSWE1a(image):
   f = cf_mask(image).select('cfmask')
   # where the f mask is > 1 (clouds and cloud shadow), call that 1 (otherwise 0) and rename as clouds.
   clouds = f.gte(1).rename('clouds')
+  #calculate hillshade
+  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
+  #calculate hillshadow
+  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   #apply dswe function
   d = DSWE(image).select('dswe')
   gt0 = (d.gt(0).rename('dswe_gt0')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   dswe1 = (d.eq(1).rename('dswe1')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   # band where dswe is 3 and apply all masks
   dswe3 = (d.eq(3).rename('dswe3')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -574,14 +645,11 @@ def ref_pull_57_DSWE1a(image):
   dswe1a = (d.eq(1)
     .Or(alg.eq(1))
     .rename('dswe1a')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
-  #calculate hillshade
-  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
-  #calculate hillshadow
-  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   
   pixOut = (image.select(['Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
                         'SurfaceTemp', 'temp_qa', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
@@ -604,6 +672,8 @@ def ref_pull_57_DSWE1a(image):
             .addBands(image.select(['SurfaceTemp']))
             .updateMask(dswe1a.eq(1)) # mask for dswe1a
             .updateMask(hs.eq(1)) # only illuminated pixels
+            .updateMask(f.eq(0))
+            .updateMask(r.eq(1))
             .addBands(gt0) 
             .addBands(dswe1)
             .addBands(dswe3)
@@ -658,18 +728,25 @@ def ref_pull_57_DSWE3(image):
   clouds = f.gte(1).rename('clouds')
   #apply dswe function
   d = DSWE(image).select('dswe')
+  #calculate hillshade
+  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
+  #calculate hillshadow
+  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   gt0 = (d.gt(0).rename('dswe_gt0')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   dswe1 = (d.eq(1).rename('dswe1')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   # band where dswe is 3 and apply all masks
   dswe3 = (d.eq(3).rename('dswe3')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -684,14 +761,11 @@ def ref_pull_57_DSWE3(image):
   dswe1a = (d.eq(1)
     .Or(alg.eq(1))
     .rename('dswe1a')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
-  #calculate hillshade
-  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
-  #calculate hillshadow
-  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   
   pixOut = (image.select(['Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
                       'SurfaceTemp', 'temp_qa', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
@@ -714,6 +788,8 @@ def ref_pull_57_DSWE3(image):
           .addBands(image.select(['SurfaceTemp']))
           .updateMask(d.eq(3)) # only vegetated water
           .updateMask(hs.eq(1)) # only illuminated pixels
+          .updateMask(f.eq(0))
+          .updateMask(r.eq(1))
           .addBands(gt0) 
           .addBands(dswe1)
           .addBands(dswe3)
@@ -768,20 +844,27 @@ def ref_pull_89_DSWE1(image):
   a = sr_aerosol(image).select('medHighAero')
   # where the f mask is > 1 (clouds and cloud shadow), call that 1 (otherwise 0) and rename as clouds.
   clouds = f.gte(1).rename('clouds')
+  #calculate hillshade
+  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
+  #calculate hillshadow
+  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   #apply dswe function
   d = DSWE(image).select('dswe')
   gt0 = (d.gt(0).rename('dswe_gt0')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   dswe1 = (d.eq(1).rename('dswe1')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   # band where dswe is 3 and apply all masks
   dswe3 = (d.eq(3).rename('dswe3')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -796,14 +879,11 @@ def ref_pull_89_DSWE1(image):
   dswe1a = (d.eq(1)
     .Or(alg.eq(1))
     .rename('dswe1a')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
-  #calculate hillshade
-  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
-  #calculate hillshadow
-  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   pixOut = (image.select(['Aerosol', 'Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
                       'SurfaceTemp', 'temp_qa', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
                       'ST_EMSD', 'ST_TRAD', 'ST_URAD'],
@@ -825,6 +905,8 @@ def ref_pull_89_DSWE1(image):
           .addBands(image.select(['SurfaceTemp']))
           .updateMask(d.eq(1)) # only high confidence water
           .updateMask(hs.eq(1)) # only illuminated pixels
+          .updateMask(f.eq(0))
+          .updateMask(r.eq(1))
           .addBands(gt0) 
           .addBands(dswe1)
           .addBands(dswe3)
@@ -881,20 +963,27 @@ def ref_pull_89_DSWE1a(image):
   a = sr_aerosol(image).select('medHighAero')
   # where the f mask is > 1 (clouds and cloud shadow), call that 1 (otherwise 0) and rename as clouds.
   clouds = f.gte(1).rename('clouds')
+  #calculate hillshade
+  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
+  #calculate hillshadow
+  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   #apply dswe function
   d = DSWE(image).select('dswe')
   gt0 = (d.gt(0).rename('dswe_gt0')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   dswe1 = (d.eq(1).rename('dswe1')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   # band where dswe is 3 and apply all masks
   dswe3 = (d.eq(3).rename('dswe3')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -909,14 +998,11 @@ def ref_pull_89_DSWE1a(image):
   dswe1a = (d.eq(1)
     .Or(alg.eq(1))
     .rename('dswe1a')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
-  #calculate hillshade
-  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
-  #calculate hillshadow
-  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   pixOut = (image.select(['Aerosol', 'Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
                       'SurfaceTemp', 'temp_qa', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
                       'ST_EMSD', 'ST_TRAD', 'ST_URAD'],
@@ -938,6 +1024,8 @@ def ref_pull_89_DSWE1a(image):
           .addBands(image.select(['SurfaceTemp']))
           .updateMask(dswe1a.eq(1)) # only algal mask
           .updateMask(hs.eq(1)) # only illuminated pixels
+          .updateMask(f.eq(0))
+          .updateMask(r.eq(1))
           .addBands(gt0) 
           .addBands(dswe1)
           .addBands(dswe3)
@@ -993,20 +1081,27 @@ def ref_pull_89_DSWE3(image):
   a = sr_aerosol(image).select('medHighAero')
   # where the f mask is > 1 (clouds and cloud shadow), call that 1 (otherwise 0) and rename as clouds.
   clouds = f.gte(1).rename('clouds')
+  #calculate hillshade
+  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
+  #calculate hillshadow
+  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   #apply dswe function
   d = DSWE(image).select('dswe')
   gt0 = (d.gt(0).rename('dswe_gt0')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   dswe1 = (d.eq(1).rename('dswe1')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
   # band where dswe is 3 and apply all masks
   dswe3 = (d.eq(3).rename('dswe3')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
@@ -1021,14 +1116,11 @@ def ref_pull_89_DSWE3(image):
   dswe1a = (d.eq(1)
     .Or(alg.eq(1))
     .rename('dswe1a')
+    .updateMask(hs.eq(1))
     .updateMask(f.eq(0))
     .updateMask(r.eq(1))
     .selfMask()
     )
-  #calculate hillshade
-  h = calc_hill_shades(image, wrs.geometry()).select('hillShade')
-  #calculate hillshadow
-  hs = calc_hill_shadows(image, wrs.geometry()).select('hillShadow')
   pixOut = (image.select(['Aerosol', 'Blue', 'Green', 'Red', 'Nir', 'Swir1', 'Swir2', 
                       'SurfaceTemp', 'temp_qa', 'ST_ATRAN', 'ST_DRAD', 'ST_EMIS',
                       'ST_EMSD', 'ST_TRAD', 'ST_URAD'],
@@ -1050,6 +1142,8 @@ def ref_pull_89_DSWE3(image):
           .addBands(image.select(['SurfaceTemp']))
           .updateMask(d.eq(3)) # only vegetated water
           .updateMask(hs.eq(1)) # only illuminated pixels
+          .updateMask(f.eq(0))
+          .updateMask(r.eq(1))
           .addBands(gt0) 
           .addBands(dswe1)
           .addBands(dswe3)

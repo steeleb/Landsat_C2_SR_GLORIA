@@ -19,16 +19,16 @@ download_csvs_from_drive <- function(drive_folder_name, google_email, version_id
   dribble_files <- dribble_files %>% 
     filter(grepl(".csv", name))
   # make sure directory exists, create it if not
-  if(!dir.exists(file.path("b_historical_RS_data_collation/in/", 
+  if(!dir.exists(file.path("c_data_download_collation/in/", 
                            version_identifier))) {
-    dir.create(file.path("b_historical_RS_data_collation/in/", 
+    dir.create(file.path("c_data_download_collation/in/", 
                          version_identifier))
   }
   walk2(.x = dribble_files$id,
         .y = dribble_files$name, 
         .f = function(.x, .y) {
           try(drive_download(file = .x,
-                         path = file.path("b_historical_RS_data_collation/in/", 
+                         path = file.path("c_data_download_collation/in/", 
                                           version_identifier,
                                           .y),
                          overwrite = FALSE)) # just pass if already downloaded

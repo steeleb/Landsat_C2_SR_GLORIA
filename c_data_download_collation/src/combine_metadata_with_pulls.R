@@ -65,9 +65,10 @@ combine_metadata_with_pulls <- function(file_prefix, version_identifier, collati
     points <- points %>% 
       select(-`system:index`) %>% 
       left_join(., metadata_light) %>% 
-      mutate(DSWE = str_sub(source, -28, -24))
+      mutate(DSWE = str_split(source, "_")[[1]][7], .by = source)
+    
     # break out the DSWE 1 data
-    if (nrow(points %>% filter(DSWE == 'DSWE1') > 0)) {
+    if (nrow(points %>% filter(DSWE == 'DSWE1')) > 0) {
       DSWE1_points <- points %>%
         filter(DSWE == 'DSWE1')
       write_feather(DSWE1_points,
@@ -76,28 +77,37 @@ combine_metadata_with_pulls <- function(file_prefix, version_identifier, collati
                                      "_collated_DSWE1_points_meta_v",
                                      collation_identifier,
                                      ".feather")))
-    }
+    } 
+    
     # and the DSWE 1a data
-    if (nrow(points %>% filter(DSWE == 'DSWE1a') > 0)) {
-      DSWE3_points <- points %>%
+    if (nrow(points %>% filter(DSWE == 'DSWE1a')) > 0) {
+      DSWE1a_points <- points %>%
         filter(DSWE == 'DSWE1a')
-      write_feather(DSWE3_points,
+      write_feather(DSWE1a_points,
                     file.path("c_data_download_collation/out/",
                               paste0(file_prefix,
                                      "_collated_DSWE1a_points_meta_v",
                                      collation_identifier,
                                      ".feather")))
     }
-  # and the DSWE 3 data
-  if (nrow(points %>% filter(DSWE == 'DSWE3') > 0)) {
-    DSWE3_points <- points %>%
-      filter(DSWE == 'DSWE3')
-    write_feather(DSWE3_points,
-                  file.path("c_data_download_collation/out/",
-                            paste0(file_prefix,
-                                   "_collated_DSWE3_points_meta_v",
-                                   collation_identifier,
-                                   ".feather")))
-      }
+    # and the DSWE 3 data
+    if (nrow(points %>% filter(DSWE == 'DSWE3')) > 0) {
+      DSWE3_points <- points %>%
+        filter(DSWE == 'DSWE3')
+      write_feather(DSWE3_points,
+                    file.path("c_data_download_collation/out/",
+                              paste0(file_prefix,
+                                     "_collated_DSWE3_points_meta_v",
+                                     collation_identifier,
+                                     ".feather")))
     }
+  }
+  # return the list of files from this process
+  list.files("c_data_download_collation/out/",
+             pattern = file_prefix,
+             full.names = TRUE) %>% 
+    #but make sure they are the specified version
+    .[grepl(collation_identifier, .)] %>% 
+    .[!grepl('filtered', .)]
+  
 }

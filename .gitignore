@@ -13,9 +13,14 @@ env/
 _targets/
 
 ## data_acquisition/out folder, except WRS_subset_list.csv
-data_acquisition/out/*
-!data_acquisition/out/WRS_subset_list.csv
+b_data_acquisition/out/*
+!b_data_acquisition/out/WRS_subset_list.csv
 
 ## data_acquisition/in folder - just the temp files created by the script
-data_acquisition/in/locs.csv
-data_acquisition/in/yml.csv
+b_data_acquisition/in/locs.csv
+b_data_acquisition/in/yml.csv
+
+## c_data_download files
+c_data_download_collation/in/*
+c_data_download_collation/out/*
+c_data_download_collation/mid/*
