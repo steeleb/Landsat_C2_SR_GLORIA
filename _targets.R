@@ -33,12 +33,16 @@ tar_option_set(packages = "tidyverse")
 tar_source(files = c(
   "a_collate_locations.R",
   "b_data_acquisition.R",
-  "c_data_download_collation.R"
+  "c_data_download_collation.R",
+  "c_data_download_collation_nomask.R",
+  "d_GLORIA_match.R"
   ))
 
 # target objects in workflow
 list(
   a_collate_locations,
   b_data_acquisition,
-  c_data_download_collation
+  c_data_download_collation,
+  c_data_download_collation_nomask,
+  d_GLORIA_match
 )

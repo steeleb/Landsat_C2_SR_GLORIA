@@ -13,13 +13,13 @@ tar_source("b_data_acquisition/py/pySetup.R")
 
 tar_source("b_data_acquisition/src/")
 source_python("b_data_acquisition/py/gee_functions.py")
+source_python("b_data_acquisition/py/gee_functions_no_masks.py")
 
 
 # Define {targets} workflow -----------------------------------------------
 
 # Set target-specific options such as packages.
-tar_option_set(packages = "tidyverse",
-               workspace_on_error = TRUE)
+tar_option_set(packages = "tidyverse")
 
 b_data_acquisition <- list(
   # read and track the config file
@@ -35,6 +35,8 @@ b_data_acquisition <- list(
     name = yml_save,
     command = {
       # make sure that {targets} runs the config_file target before this target
+      save_unique_locations
+      collated_IDS_w_locID
       config_file 
       # and that the locs file has been created
       # save_collated_locs # except that this is making the pipeline become outdated
@@ -85,5 +87,18 @@ b_data_acquisition <- list(
     },
     pattern = map(WRS_tiles),
     packages = "reticulate"
+  ),
+  
+  # run the Landsat pull as function per tile
+  tar_target(
+    name = eeRun_no_mask,
+    command = {
+      yml
+      locs
+      run_GEE_per_tile_nomask(WRS_tile = WRS_tiles)
+    },
+    pattern = map(WRS_tiles),
+    packages = "reticulate"
   )
+  
 )

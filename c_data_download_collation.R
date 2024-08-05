@@ -31,9 +31,9 @@ c_data_download_collation <- list(
     command = {
       poi_tasks_complete
       download_csvs_from_drive(drive_folder_name = yml$proj,
-                                       google_email = yml$google_email,
-                                       version_identifier = yml$run_date)
-      },
+                               google_email = yml$google_email,
+                               version_identifier = yml$run_date)
+    },
     packages = c("tidyverse", "googledrive")
   ),
   
@@ -61,7 +61,7 @@ c_data_download_collation <- list(
 
   # pass the QAQC filter over each of the listed files, creating filtered files
   tar_target(
-    name = C_QAQC_filtered_data,
+    name = c_QAQC_filtered_data,
     command = baseline_QAQC_RS_data(filepath = c_GLORIA_SR_metadata,
                                     file_prefix = yml$proj,
                                     collation_identifier = "2024-07-30"),

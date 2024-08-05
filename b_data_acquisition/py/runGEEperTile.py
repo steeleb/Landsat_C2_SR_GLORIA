@@ -382,7 +382,7 @@ for e in extent:
       #Send next task.                                        
       locs_dataOut_89_D1a.start()
     else:
-      print("Not configured to acquire DSWE 1a stack for Landsat 8, 9 for ' + e + ' configuration")
+      print('Not configured to acquire DSWE 1a stack for Landsat 8, 9 for ' + e + ' configuration')
       print('Starting Landsat 8, 9 DSWE1 acquisition for ' + e + ' configuration at tile ' + str(tiles))
       locs_out_89_D1 = locs_stack_ls89.map(ref_pull_89_DSWE1).flatten()
       locs_out_89_D1 = locs_out_89_D1.filter(ee.Filter.notNull(['med_Blue']))

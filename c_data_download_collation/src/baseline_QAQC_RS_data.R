@@ -88,20 +88,17 @@ baseline_QAQC_RS_data <- function(filepath, file_prefix, collation_identifier) {
                             NA_real_,
                             .))) 
   
+  fn = paste0(file_prefix, 
+                    "_filtered_",
+                    DSWE, "_",
+                    type, "_v",
+                    file_suffix,
+                    ".feather")
+  
   write_feather(df, file.path("c_data_download_collation/out/",
-                              paste0(file_prefix, 
-                                     "_filtered_",
-                                     DSWE, "_",
-                                     type, "_v",
-                                     file_suffix,
-                                     ".feather")))
+                              fn))
   
-  # return the list of files from this process
-  list.files("c_data_download_collation/out/",
-             pattern = file_prefix,
-             full.names = TRUE) %>% 
-    #but make sure they are the specified version
-    .[grepl(collation_identifier, .)] %>% 
-    .[grepl('filtered', .)]
-  
+  # return the file name
+  file.path("c_data_download_collation/out/",
+            fn)
 }

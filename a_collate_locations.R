@@ -68,7 +68,7 @@ a_collate_locations <- list(
   
   #join those suckers, harmonize and drop locs without lat/lon
   tar_target(
-    name = collated_locs,
+    name = collated_IDS,
     command = full_join(gloria_formatted, maciel_formatted) %>% 
       mutate(ID = if_else(is.na(GLORIA_ID),
                           Maciel_ID,
@@ -80,8 +80,26 @@ a_collate_locations <- list(
   
   # save the file
   tar_target(
-    name = save_collated_locs,
-    command = write_csv(collated_locs, "data/collated_locations_for_pull.csv"),
+    name = save_collated_IDS,
+    command = write_csv(collated_IDS, "data/collated_IDs.csv"),
+  ), 
+  
+  tar_target(
+    name = unique_lat_lon,
+    command = collated_IDS %>% 
+      summarize(.by = c(Latitude, Longitude)) %>% 
+      rowid_to_column("location_id") 
+  ),
+
+  # save the file
+  tar_target(
+    name = save_unique_locations,
+    command = write_csv(unique_lat_lon, "data/unique_locations_for_pull.csv"),
+  ),
+  
+  tar_target(
+    name = collated_IDS_w_locID,
+    command = full_join(collated_IDS, unique_lat_lon)
   )
 )
   
