@@ -1,0 +1,113 @@
+---
+title: "Comparison of GLORIA data and SR pulls"
+author: "ROSSyndicate"
+date: "2024-08-06"
+params:
+  matches: d_matches_light
+  matches_nomask: d_matches_light_no_mask
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(targets)
+
+tar_load(d_matches_light)
+```
+
+# Sanity check
+
+First, look at days difference between the Maciel pull and our pull
+
+```{r}
+ggplot(d_matches_light, aes(x = dif_days, y = day_diff)) + 
+  geom_point() +
+  theme_bw()
+```
+
+I overjoined and then arranged by absolute value of difference in days -
+which creates some mismatches with their analysis... but I'm not really
+sure how it works out. 
+
+```{r}
+d_matches_light <- d_matches_light %>% 
+  mutate(our_sensor = case_when(grepl('5', mission) ~ 'TM',
+                                grepl('7', mission) ~ 'ETM+',
+                                grepl('8', mission) ~ 'OLI',
+                                grepl('9', mission) ~ 'OLI2',
+                                TRUE ~ NA_character_))
+
+ggplot(d_matches_light, aes(x = our_sensor, y = sensor)) + geom_point()
+```
+
+Double checked the data for issues on my end, but it really just looks like 
+matchups with multiple satellites and we just chose differently. Any time there is
+a day-difference difference we also mis-match sensors. 
+
+# Comparing our satellite pulls to theirs
+
+This is with me dividing our Rrs by 3.14. (really, I should multiply theirs).
+Chef's kiss.
+
+```{r}
+ggplot(d_matches_light, aes(x = med_Aerosol/3.14, y = CA_satellite)) + 
+  geom_point() +
+  labs(x = "our Rrs",
+       y = "their Rrs",
+       title = "Aerosol") +
+  theme_bw()
+ggplot(d_matches_light, aes(x = med_Red/3.14, y = Red_satellite)) + 
+  geom_point() +
+  labs(x = "our Rrs",
+       y = "their Rrs",
+       title = "Red") +
+  theme_bw()
+ggplot(d_matches_light, aes(x = med_Green/3.14, y = Green_satellite)) + 
+  geom_point() +
+  labs(x = "our Rrs",
+       y = "their Rrs",
+       title = "Green") +
+  theme_bw()
+ggplot(d_matches_light, aes(x = med_Blue/3.14, y = Blue_satellite)) + 
+  geom_point() +
+  labs(x = "our Rrs",
+       y = "their Rrs",
+       title = "Blue") +
+  theme_bw()
+ggplot(d_matches_light, aes(x = med_Nir/3.14, y = NIR_satellite)) + 
+  geom_point() +
+  labs(x = "our Rrs",
+       y = "their Rrs",
+       title = "Nir") +
+  theme_bw()
+```
+
+# Comparing sat data to insitu
+
+And then just comparing the values to insitu. Our data is in black, theirs in blue.
+
+```{r}
+ggplot(d_matches_light, aes(x = CA_insitu, y = med_Aerosol/3.14)) + 
+  geom_point() +
+  geom_point(aes(y = CA_satellite), color = 'blue') +
+  theme_bw()
+ggplot(d_matches_light, aes(y = med_Red/3.14, x = Red_insitu))  + 
+  geom_point() +
+  geom_point(aes(y = Red_satellite), color = 'blue') +
+  theme_bw()
+ggplot(d_matches_light, aes(y = med_Green/3.14, x = Green_insitu))  + 
+  geom_point() +
+  geom_point(aes(y = Green_satellite), color = 'blue') +
+  theme_bw()
+ggplot(d_matches_light, aes(y = med_Blue/3.14, x = Blue_insitu))  + 
+  geom_point() +
+  geom_point(aes(y = Blue_satellite), color = 'blue') +
+  theme_bw()
+ggplot(d_matches_light, aes(y = med_Nir/3.14, x = NIR_insitu))  + 
+  geom_point() +
+  geom_point(aes(y = NIR_satellite), color = 'blue') +
+  theme_bw()
+```
+

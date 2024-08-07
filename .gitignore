@@ -24,3 +24,6 @@ b_data_acquisition/in/yml.csv
 c_data_download_collation/in/*
 c_data_download_collation/out/*
 c_data_download_collation/mid/*
+c_data_download_collation_nomask/in/*
+c_data_download_collation_nomask/out/*
+c_data_download_collation_nomask/mid/*

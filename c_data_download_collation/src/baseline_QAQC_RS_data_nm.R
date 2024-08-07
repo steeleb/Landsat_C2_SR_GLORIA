@@ -16,7 +16,7 @@
 #' folder and dumps filtered into out folder
 #' 
 #' 
-baseline_QAQC_RS_data <- function(filepath, file_prefix, collation_identifier) {
+baseline_QAQC_RS_data_nm <- function(filepath, file_prefix, collation_identifier) {
   
   collated <- read_feather(filepath)
   
