@@ -22,21 +22,23 @@ library(tarchetypes)
 tar_option_set(packages = "tidyverse")
 
 a_collate_locations <- list(
+  # metadata processing ----
+  
   #load/track gloria locs
   tar_file_read(
     name = gloria_metadata,
-    command = "data/GLORIA_meta_and_lab.csv",
+    command = "data/GLORIA_data/GLORIA_meta_and_lab.csv",
     read = read_csv(!!.x),
     packages = "readr"
   ),
-  #load/track maciel matchups
+  #load/track maciel matchups (these include insitu band data)
   tar_file_read(
     name = maciel_matches,
-    command = "data/Matchups.csv",
+    command = "data/Maciel_data/Matchups.csv",
     read = read_csv(!!.x),
     packages = "readr"
   ),
-  #format gloria data
+  #format gloria data (no band data, just site data)
   tar_target(
     name = gloria_formatted,
     command = gloria_metadata %>% 
@@ -52,7 +54,7 @@ a_collate_locations <- list(
       filter(Water_body_type %in% c(1,2,4))
   ),
   
-  #format Maciel data
+  #format Maciel metadata for join
   tar_target(
     name = maciel_formatted,
     command = maciel_matches %>% 
@@ -78,12 +80,6 @@ a_collate_locations <- list(
       filter(!is.na(Latitude|Longitude))
   ),
   
-  # save the file
-  tar_target(
-    name = save_collated_IDS,
-    command = write_csv(collated_IDS, "data/collated_IDs.csv"),
-  ), 
-  
   tar_target(
     name = unique_lat_lon,
     command = collated_IDS %>% 
@@ -91,15 +87,50 @@ a_collate_locations <- list(
       rowid_to_column("location_id") 
   ),
 
-  # save the file
+  # save the file for the pull
   tar_target(
     name = save_unique_locations,
     command = write_csv(unique_lat_lon, "data/unique_locations_for_pull.csv"),
   ),
   
+  # and make a new target that has all the information in it for collation later
   tar_target(
     name = collated_IDS_w_locID,
     command = full_join(collated_IDS, unique_lat_lon)
+  ),
+  
+  # gloria data and data processing ----
+  tar_file_read(
+    name = gloria_data_raw,
+    command = "data/GLORIA_data/GLORIA_Rrs_mean.csv",
+    read = read_csv(!!.x),
+    packages = 'readr'
+  ),
+  tar_file_read(
+    name = gloria_qc,
+    command = "data/GLORIA_data/GLORIA_qc_flags.csv",
+    read = read_csv(!!.x),
+    packages = 'readr'
+  ),
+  tar_file_read(
+    name = gloria_std,
+    command = "data/GLORIA_data/GLORIA_Rrs_std.csv",
+    read = read_csv(!!.x),
+    packages = 'readr'
+  ),
+  tar_file_read(
+    name = gloria_wq,
+    command = "data/GLORIA_data/GLORIA_waterqual_uncert.csv",
+    read = read_csv(!!.x),
+    packages = 'readr'
+  ),
+  
+  # and collate the files
+  tar_target(
+    name = gloria_db,
+    command = reduce(list(gloria_data_raw, gloria_qc, gloria_std, gloria_wq),
+                     full_join)
   )
+
 )
   

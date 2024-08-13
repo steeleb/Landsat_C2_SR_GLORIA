@@ -6,7 +6,7 @@ yaml_file <- "gloria_config.yml"
 
 # Set up python virtual environment ---------------------------------------
 
-tar_source("b_data_acquisition/py/pySetup.R")
+tar_source("b_data_acquisition/pySetup.R")
 
 
 # Source functions --------------------------------------------------------

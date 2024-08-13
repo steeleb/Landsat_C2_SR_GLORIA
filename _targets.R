@@ -20,7 +20,7 @@ yaml_file <- "gloria_config.yml"
 # Set up python virtual environment ---------------------------------------
 
 if (!dir.exists("env")) {
-  tar_source("data_acquisition/src/pySetup.R")
+  tar_source("b_data_acquisition/pySetup.R")
 } else {
   use_condaenv(file.path(getwd(), "env"))
 }
@@ -35,6 +35,7 @@ tar_source(files = c(
   "b_data_acquisition.R",
   "c_data_download_collation.R",
   "c_data_download_collation_nomask.R",
+  "d_calculate_band_values.R",
   "d_GLORIA_match.R"
   ))
 
@@ -44,5 +45,6 @@ list(
   b_data_acquisition,
   c_data_download_collation,
   c_data_download_collation_nomask,
+  d_calculate_band_values,
   d_GLORIA_match
 )
