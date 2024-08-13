@@ -36,7 +36,7 @@ tar_source(files = c(
   "c_data_download_collation.R",
   "c_data_download_collation_nomask.R",
   "d_calculate_band_values.R",
-  "d_GLORIA_match.R"
+  "e_GLORIA_match.R"
   ))
 
 # target objects in workflow
@@ -46,5 +46,5 @@ list(
   c_data_download_collation,
   c_data_download_collation_nomask,
   d_calculate_band_values,
-  d_GLORIA_match
+  e_GLORIA_match
 )

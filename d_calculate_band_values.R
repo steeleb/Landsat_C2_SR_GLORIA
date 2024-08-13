@@ -14,7 +14,7 @@ d_calculate_band_values <- list(
   # list the missions to convert hyperspectral to
   tar_target(
     name = missions,
-    command = c("L5", "L7", "L8", "L9")
+    command = c("LANDSAT_5", "LANDSAT_7", "LANDSAT_8", "LANDSAT_9")
   ),
   
   # read in and collate the response functions ----
@@ -45,6 +45,13 @@ d_calculate_band_values <- list(
                              raw_data = gloria_db,
                              id = "GLORIA_ID") %>% 
       left_join(gloria_qc),
+    pattern = missions
+  ),
+  
+  # now harmonize band names for comparison
+  tar_target(
+    name = GLORIA_rsr_harmonize,
+    command = harmonize_column_names(data = GLORIA_rsr, mission_id = missions),
     pattern = missions
   )
   

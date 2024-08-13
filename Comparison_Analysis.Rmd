@@ -14,32 +14,26 @@ knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(targets)
 
-tar_load(d_matches_light)
+tar_load(e_matches_light)
+tar_load(maciel_matches)
 ```
 
 # Sanity check
 
-First, look at days difference between the Maciel pull and our pull
+Look at days difference frequency
 
 ```{r}
-ggplot(d_matches_light, aes(x = dif_days, y = day_diff)) + 
-  geom_point() +
+ggplot(e_matches_light, aes(x = day_diff)) + 
+  geom_histogram() +
   theme_bw()
 ```
 
-I overjoined and then arranged by absolute value of difference in days -
-which creates some mismatches with their analysis... but I'm not really
-sure how it works out. 
+Also look at mission frequecny
 
 ```{r}
-d_matches_light <- d_matches_light %>% 
-  mutate(our_sensor = case_when(grepl('5', mission) ~ 'TM',
-                                grepl('7', mission) ~ 'ETM+',
-                                grepl('8', mission) ~ 'OLI',
-                                grepl('9', mission) ~ 'OLI2',
-                                TRUE ~ NA_character_))
-
-ggplot(d_matches_light, aes(x = our_sensor, y = sensor)) + geom_point()
+ggplot(e_matches_light, aes(x = mission)) + 
+  geom_histogram(stat = "count") +
+  theme_bw()
 ```
 
 Double checked the data for issues on my end, but it really just looks like 
@@ -48,36 +42,72 @@ a day-difference difference we also mis-match sensors.
 
 # Comparing our satellite pulls to theirs
 
-This is with me dividing our Rrs by 3.14. (really, I should multiply theirs).
-Chef's kiss.
 
 ```{r}
-ggplot(d_matches_light, aes(x = med_Aerosol/3.14, y = CA_satellite)) + 
+maciel_matches <- maciel_matches %>% 
+  rename_with(~ paste0(., "_maciel"),
+              .cols = contains("satellite")) %>% 
+  rename_with(~ paste0(., "_maciel"),
+              .cols = contains("insitu")) 
+matched_data <- inner_join(e_matches_light, maciel_matches)
+```
+
+```{r}
+ggplot(matched_data, aes(x = med_Aerosol/3.14, y = CA_satellite_maciel)) +
   geom_point() +
-  labs(x = "our Rrs",
-       y = "their Rrs",
+  theme_bw()
+
+ggplot(matched_data, aes(x = med_Blue/3.14, y = Blue_satellite_maciel)) +
+  geom_point() +
+  theme_bw()
+
+ggplot(matched_data, aes(x = med_Green/3.14, y = Green_satellite_maciel)) +
+  geom_point() +
+  theme_bw()
+
+ggplot(matched_data, aes(x = med_Red/3.14, y = Red_satellite_maciel)) +
+  geom_point() +
+  theme_bw()
+
+ggplot(matched_data, aes(x = med_Nir/3.14, y = NIR_satellite_maciel)) +
+  geom_point() +
+  theme_bw()
+
+```
+
+
+```{r}
+ggplot(matched_data, aes(x = CA_insitu, y = med_Aerosol/3.14)) + 
+  geom_point() +
+  geom_point(aes(x = CA_insitu_maciel, y = CA_satellite_maciel), color = "blue") +
+  labs(x = "in situ",
+       y = "median pull",
        title = "Aerosol") +
   theme_bw()
-ggplot(d_matches_light, aes(x = med_Red/3.14, y = Red_satellite)) + 
+ggplot(matched_data, aes(x = Red_insitu, y = med_Red/3.14)) + 
   geom_point() +
+  geom_point(aes(x = Red_insitu_maciel, y = Red_satellite_maciel), color = "blue") +
   labs(x = "our Rrs",
        y = "their Rrs",
        title = "Red") +
   theme_bw()
-ggplot(d_matches_light, aes(x = med_Green/3.14, y = Green_satellite)) + 
+ggplot(matched_data, aes(x = Blue_insitu, y = med_Blue/3.14)) + 
   geom_point() +
-  labs(x = "our Rrs",
-       y = "their Rrs",
-       title = "Green") +
-  theme_bw()
-ggplot(d_matches_light, aes(x = med_Blue/3.14, y = Blue_satellite)) + 
-  geom_point() +
+  geom_point(aes(x = Blue_insitu_maciel, y = Blue_satellite_maciel), color = "blue") +
   labs(x = "our Rrs",
        y = "their Rrs",
        title = "Blue") +
   theme_bw()
-ggplot(d_matches_light, aes(x = med_Nir/3.14, y = NIR_satellite)) + 
+ggplot(e_matches_light, aes(x = Green_insitu, y = med_Green/3.14)) + 
   geom_point() +
+  geom_point(data = maciel_matches, aes(x = Green_insitu_maciel, y = Green_satellite_maciel), color = "blue") +
+  labs(x = "our Rrs",
+       y = "their Rrs",
+       title = "Blue") +
+  theme_bw()
+ggplot(e_matches_light, aes(x = NIR_insitu, y = med_Nir)) + 
+  geom_point() +
+  geom_point(data = maciel_matches, aes(x = NIR_insitu, y = NIR_satellite), color = "blue") +
   labs(x = "our Rrs",
        y = "their Rrs",
        title = "Nir") +

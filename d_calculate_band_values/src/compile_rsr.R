@@ -4,7 +4,7 @@ compile_rsr <- function(rsr_path, mission_id) {
   # drop the ones we don't care about
   rsr_sheets <- sheets[!grepl("plot|pan|summary|readme", sheets, ignore.case = T)]
   # read 'em all in, formatting is a bit different for 5/7, so deal with those separately
-  if (mission_id %in% c("L5", "L7")) {
+  if (mission_id %in% c("LANDSAT_5", "LANDSAT_7")) {
     rsrs <- map(rsr_sheets,
                 function(sheet) {
                   df <- read_xlsx(rsr_path, 
@@ -15,7 +15,7 @@ compile_rsr <- function(rsr_path, mission_id) {
     rsrs <- rsrs %>% reduce(., full_join)
     names(rsrs) <- c("wavelength", "band_1", "band_2", "band_3", "band_4",
                      "band_5", "band_7")
-  } else if (mission_id == "L8") {
+  } else if (mission_id == "LANDSAT_8") {
     rsrs <- map(rsr_sheets,
                 function(sheet) {
                   df <- read_xlsx(rsr_path, 
@@ -29,7 +29,7 @@ compile_rsr <- function(rsr_path, mission_id) {
                      "band_5", "cirrus", "band_6", "band_7")
     rsrs <- rsrs %>% 
       select(-cirrus)
-  } else if (mission_id == "L9") {
+  } else if (mission_id == "LANDSAT_9") {
     rsrs <- map(rsr_sheets,
                 function(sheet) {
                   df <- read_xlsx(rsr_path, 
@@ -44,7 +44,7 @@ compile_rsr <- function(rsr_path, mission_id) {
     rsrs <- rsrs %>% 
       select(-cirrus)
   } else { 
-    print("Mission not recognized. Confirm mission_id is one of the following: L5, L7, L8, L9")
+    print("Mission not recognized. Confirm mission_id is one of the following: LANDSAT_5, LANDSAT_7, LANDSAT_8, LANDSAT_9")
     stop()
   }
   # clean up the column names

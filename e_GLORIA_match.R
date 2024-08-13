@@ -1,66 +1,58 @@
 # Source functions for this {targets} list
-#tar_source("d_GLORIA_match/src/")
+#tar_source("e_GLORIA_match/src/")
 
 # Match up GLORIA database with SR pulls -------------
 
-d_GLORIA_match <- list(
+e_GLORIA_match <- list(
   tar_file_read(
-    name = d_GLORIA_DSWE1_data,
+    name = e_GLORIA_DSWE1_data,
     command = c_QAQC_filtered_data[grepl('_DSWE1_', c_QAQC_filtered_data)],
     read = read_feather(!!.x),
     packages = "feather"
   ),
   
   tar_target(
-    name = d_all_locs,
+    name = GLORIA_rsr_date,
     command = {
-      # grab novel maciel data
-      maciel <- maciel_matches %>% 
-        mutate(insitu_date = mdy(Date)) %>% 
-        filter(!grepl('\\bGID|\\bAGID', ID)) %>% 
-        select(ID, insitu_date, Latitude = lat, Longitude = long)
-      # format gloria data
-      gloria <- gloria_metadata %>% 
+      # format gloria data and join with relative spectral response
+      gloria_metadata %>% 
         mutate(insitu_date = as_date(Date_Time_UTC)) %>% 
-        select(ID = GLORIA_ID, 
-               insitu_date,
-               Latitude, 
-               Longitude)
-      full_join(maciel, gloria) %>% 
-        filter(!is.na(rowid))
+        filter(Water_body_type %in% c(1,2,4)) %>% 
+        select(GLORIA_ID,
+               Latitude, Longitude,
+               insitu_date) %>% 
+        left_join(., GLORIA_rsr_harmonize) %>% 
+        rename(ID = GLORIA_ID) %>% 
+        left_join(., collated_IDS_w_locID)
     }
   ),
   
   # join with Gloria metadata and filter to within 2 days of in situ measurement
   tar_target(
-    name = d_info_data_matches,
+    name = e_info_data_matches,
     command = {
-      left_join(d_GLORIA_DSWE1_data %>% 
+      full_join(e_GLORIA_DSWE1_data %>% 
                   mutate(location_id = as.numeric(rowid)) %>% 
                   select(-rowid), 
-                d_all_locs,
+                GLORIA_rsr_date,
                 relationship = "many-to-many") %>% 
         mutate(day_diff = insitu_date - date) %>% 
         filter(abs(day_diff) <= 2) %>% 
         arrange(abs(day_diff)) %>% 
-        group_by(ID) %>% 
-        slice(1) %>% 
-        ungroup() %>% 
-        left_join(., maciel_matches)
+        slice(1, .by = ID) %>% 
+        select(-SWIR1_insitu)
     }
   ),
   
   tar_target(
-    name = d_matches_light,
+    name = e_matches_light,
     command = {
-      d_info_data_matches %>% 
-      select(ID, date, day_diff, dif_days, mission, sensor,
+      e_info_data_matches %>% 
+      select(ID, date, day_diff, mission, 
              # surface reflectance 
              med_Aerosol, med_Blue:med_Nir, 
              # in situ
-             CA_insitu:NIR_insitu, 
-             # maciel pull
-             CA_satellite:NIR_satellite)
+             CA_insitu, Blue_insitu, Red_insitu, Green_insitu, NIR_insitu)
     }
   )
 )
