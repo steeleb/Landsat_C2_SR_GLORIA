@@ -18,6 +18,12 @@ tar_load(e_matches_light)
 tar_load(maciel_matches)
 ```
 
+NOTE TO SELF:
+
+There are still some inconsistencies in the RSR band calculation from hyperspectral
+that i do in step d/e. If I come back to revisit this, I need to figure out why
+so many of those are coming back as zeros. 
+
 # Sanity check
 
 Look at days difference frequency
